@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv
 from app.api.v1.endpoints.instagram.insta_service import router as insta_router
 from app.api.v1.endpoints.facebook.facebook_service import router as facebook_router
+from app.api.v1.endpoints.x.x_service import router as x_router
 import requests
 load_dotenv()
 from app.core.config import ACCESS_TOKEN, FB_PAGE_ID, IG_USER_ID,PAGE_ACCESS_TOKEN,GRAPH
@@ -21,6 +22,7 @@ app.add_middleware(
 
 app.include_router(insta_router)
 app.include_router(facebook_router)
+app.include_router(x_router)
 
 print("GRAPH-------->",GRAPH)
 print("ACCess token----------------------->",ACCESS_TOKEN)
