@@ -1,27 +1,20 @@
 import os
 import requests
-from dotenv import load_dotenv
 from requests_oauthlib import OAuth1
+
 from app.models.models import MentionPost, Platform
 from app.services.db_services import get_unreplied_mentions, store_mentions, update_mentions_after_reply
 from app.utils.file_handling import read_last_id, save_last_id
+from app.core.config import X_USER_ID, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET, X_CONSUMER_KEY, X_CONSUMER_SECRET
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-load_dotenv()
-
-USER_ID = os.getenv("USER_ID")
-MENTIONS_URL = f"https://api.twitter.com/2/users/{USER_ID}/mentions"
+MENTIONS_URL = f"https://api.twitter.com/2/users/{X_USER_ID}/mentions"
 REPLY_URL = "https://api.twitter.com/2/tweets"
 
 # OAuth1 Setup (manual headers with httpx)
-OAUTH = OAuth1(
-    os.getenv("CONSUMER_KEY"),
-    os.getenv("CONSUMER_SECRET"),
-    os.getenv("ACCESS_TOKEN"),
-    os.getenv("ACCESS_TOKEN_SECRET"),
-    signature_type='auth_header'
-)
+OAUTH = OAuth1(X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET, X_CONSUMER_KEY, X_CONSUMER_SECRET,signature_type='auth_header')
 
 async def fetch_mentions(db: AsyncSession):
     """Fetch mentions from X (Twitter) API."""

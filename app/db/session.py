@@ -3,15 +3,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
-import dotenv, os
+from app.core.config import DATABASE_URL
 
-# Replace with your MySQL details
 
-dotenv.load_dotenv()
-
-URL_DATABASE = os.getenv("URL_DATABASE")
-
-engine = create_async_engine(URL_DATABASE, echo=True)  
+engine = create_async_engine(DATABASE_URL, echo=True)  
 
 SessionLocal = sessionmaker(
     engine,
