@@ -3,4 +3,5 @@
 .env.prod
 .env.uat
 social-env/
+env/
 __pycache__
