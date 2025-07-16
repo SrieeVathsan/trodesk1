@@ -25,12 +25,12 @@ class Settings(BaseSettings):
     IG_USER_ID:int
     FB_PAGE_ID:int
     GRAPH:str
-    # X_ACCESS_TOKEN: str
-    # X_ACCESS_TOKEN_SECRET: str
-    # X_CONSUMER_KEY: str
-    # X_CONSUMER_SECRET: str
-    # X_USER_ID: int
-    # DATABASE_URL: str
+    X_ACCESS_TOKEN: str
+    X_ACCESS_TOKEN_SECRET: str
+    X_CONSUMER_KEY: str
+    X_CONSUMER_SECRET: str
+    X_USER_ID: int
+    DATABASE_URL: str
     
     class Config:
         env_file_encoding = 'utf-8'

@@ -9,6 +9,9 @@ from dotenv import load_dotenv
 from app.core.config import IG_USER_ID,ACCESS_TOKEN,GRAPH,VERIFY_TOKEN
 import requests
 
+from app.models.models import MentionPost, Platform, User
+from app.services.db_services import get_unreplied_mentions, update_mentions_after_reply
+
 
 
 
@@ -135,12 +138,13 @@ async def fetch_ig_posts():
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to fetch posts: {str(e)}")
 
-async def fetch_ig_mentions():
+async def fetch_ig_mentions(db: AsyncSession):
     """
     Fetch posts and stories where the Instagram account is tagged/mentioned.
-    Falls back to /tags endpoint if /mentions fails.
+    Stores them in the database similar to X (Twitter) mentions.
     """
     async with AsyncClient() as http_client:
+        # Try mentions endpoint first
         url = f"{GRAPH}/{IG_USER_ID}/mentions"
         params = {
             "fields": "id,caption,media_type,media_url,timestamp,permalink,username,owner",
@@ -149,20 +153,24 @@ async def fetch_ig_mentions():
         try:
             resp = await http_client.get(url, params=params)
             data = resp.json()
+            
             if "error" in data:
-                # Fallback to /tags endpoint
+                # Fallback to tags endpoint if mentions not supported
                 if "nonexisting field (mentions)" in data["error"]["message"]:
-                    url = f"{GRAPH}/{IG_USER_ID}/tags"
-                    resp = await http_client.get(url, params=params)
-                    data = resp.json()
-                    if "error" in data:
-                        raise HTTPException(status_code=400, detail=f"Mentions and tags failed: {data['error']['message']}")
-                    return {
-                        "success": True,
-                        "message": f"Fetched {len(data.get('data', []))} tags from Instagram (mentions not supported)",
-                        "data": data.get("data", [])
-                    }
+                    return await fetch_ig_tags(db)
                 raise HTTPException(status_code=400, detail=data["error"]["message"])
+            
+            # Ensure platform exists
+            platform = await db.get(Platform, "instagram")
+            if not platform:
+                platform = Platform(id="instagram", name="Instagram")
+                db.add(platform)
+                await db.commit()
+            
+            # Store mentions
+            if data.get("data"):
+                await store_instagram_mentions(data, db, platform_id="instagram")
+            
             return {
                 "success": True,
                 "message": f"Fetched {len(data.get('data', []))} mentions from Instagram",
@@ -170,6 +178,142 @@ async def fetch_ig_mentions():
             }
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to fetch mentions: {str(e)}")
+
+async def fetch_ig_tags(db: AsyncSession):
+    """Fallback for when mentions endpoint is not available."""
+    async with AsyncClient() as http_client:
+        url = f"{GRAPH}/{IG_USER_ID}/tags"
+        params = {
+            "fields": "id,caption,media_type,media_url,timestamp,permalink,username,owner",
+            "access_token": ACCESS_TOKEN
+        }
+        try:
+            resp = await http_client.get(url, params=params)
+            data = resp.json()
+            
+            if "error" in data:
+                raise HTTPException(status_code=400, detail=data["error"]["message"])
+            
+            # Ensure platform exists
+            platform = await db.get(Platform, "instagram")
+            if not platform:
+                platform = Platform(id="instagram", name="Instagram")
+                db.add(platform)
+                await db.commit()
+            
+            # Store mentions
+            if data.get("data"):
+                await store_instagram_mentions(data, db, platform_id="instagram")
+            
+            return {
+                "success": True,
+                "message": f"Fetched {len(data.get('data', []))} tags from Instagram (mentions not supported)",
+                "data": data.get("data", [])
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to fetch tags: {str(e)}")
+
+async def store_instagram_mentions(response: dict, db: AsyncSession, platform_id: str):
+    """Save Instagram mentions/tags to DB."""
+    posts = response.get("data", [])
+    
+    for post in posts:
+        post_id = post["id"]
+        
+        # Skip duplicates
+        existing = await db.get(MentionPost, post_id)
+        if existing:
+            continue
+        
+        # Get author info
+        owner = post.get("owner", {})
+        author_id = post["username"]
+        username = post["username"]
+        print("Username--------------------------->",owner)
+        
+        # Ensure User exists
+        if author_id:
+            user = await db.get(User, author_id)
+            if not user:
+                user = User(
+                    id=author_id,
+                    username=username,
+                    display_name=username,  # Instagram doesn't provide display name separately
+                    platform_id=platform_id
+                )
+                db.add(user)
+        
+        # Parse created_at
+        timestamp = post.get("timestamp")
+        dt = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S%z") if timestamp else None
+        
+        # Create MentionPost record
+        mention = MentionPost(
+            id=post_id,
+            platform_id=platform_id,
+            user_id=author_id,
+            text=post.get("caption"),
+            created_at=dt,
+            media_url=post.get("media_url")
+        )
+        db.add(mention)
+    
+    await db.commit()
+
+async def process_unreplied_ig_mentions(db: AsyncSession):
+    """Process and reply to unreplied Instagram mentions."""
+    mentions = await get_unreplied_mentions(db)
+    
+    if not mentions:
+        return {"status": "no_unreplied_mentions"}
+    
+    updates = []
+    failed = []
+    
+    for mention in mentions:
+        if mention.platform_id != "instagram":
+            continue
+            
+        # Customize reply text here
+        reply_text = generate_custom_reply(mention)
+        
+        # Call Instagram API
+        try:
+            result = await reply_to_mention(mention.id, reply_text)
+            
+            if result["success"]:
+                updates.append({
+                    "id": mention.id,
+                    "reply_id": result["data"]["id"]  # Assuming API returns the reply ID
+                })
+            else:
+                failed.append({
+                    "id": mention.id,
+                    "error": result.get("error", "Unknown error")
+                })
+        except Exception as e:
+            failed.append({
+                "id": mention.id,
+                "error": str(e)
+            })
+    
+    # Bulk update DB
+    await update_mentions_after_reply(db, updates)
+    
+    return {
+        "status": "done",
+        "replied": updates,
+        "failed": failed
+    }
+
+def generate_custom_reply(mention: MentionPost) -> str:
+    """Generate a context-aware reply based on the post."""
+    if "thank" in (mention.text or "").lower():
+        return "You're most welcome! 🙌"
+    elif "great" in (mention.text or "").lower():
+        return "Glad you liked it! 😊"
+    return "Thanks for mentioning us!"
+
 
 async def instagram_conversations():
     url = f"{GRAPH}/{IG_USER_ID}/conversations"

@@ -1,7 +1,8 @@
-from fastapi import APIRouter,HTTPException
+from fastapi import APIRouter, Depends,HTTPException
 from app.services.insta_service import fetch_ig_mentions,fetch_ig_posts,instagram_conversations,instagram_private_reply,reply_to_mention
 from app.core.logger import app_logger
-
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.session import get_db
 router=APIRouter(tags=["Instagram"])
 
 @router.get("/instagram/posts")
@@ -13,9 +14,9 @@ async def get_insta_posts():
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/instagram/mentions")
-async def get_mentions():
+async def get_mentions(db:AsyncSession=Depends(get_db)):
     try:
-        return await fetch_ig_mentions()  
+        return await fetch_ig_mentions(db=db)  
     except Exception as e:
         app_logger.info(f"Error fetching mentioned posts from instagram {e}")
         raise HTTPException(status_code=500, detail=str(e))

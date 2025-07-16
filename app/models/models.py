@@ -37,6 +37,8 @@ class MentionPost(Base):
     media_url = Column(Text, nullable=True)
     is_reply = Column(Boolean, default=False)
     replied_to_post_id = Column(String(100), nullable=True)
+    sentiment=Column(String(100),nullable=True)
+    Ticket_resolved=Column(Boolean,default=False)
 
     platform = relationship("Platform", back_populates="posts")
     user = relationship("User", back_populates="posts")
