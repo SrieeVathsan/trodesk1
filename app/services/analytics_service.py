@@ -15,7 +15,7 @@ async def get_sentiment_counts(db: AsyncSession, days: int = 7):
     ).where(
         MentionPost.created_at.between(start_date, end_date),
         MentionPost.sentiment.isnot(None)
-    ).group_by(func.lower(MentionPost.sentiment))
+    ).group_by(MentionPost.sentiment)
     
     result = await db.execute(sentiment_query)
     sentiment_counts = result.all()

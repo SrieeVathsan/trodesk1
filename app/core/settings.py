@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     X_USER_ID: int
     DATABASE_URL: str
     
-    class Config:
+    class ConfigDict:
         env_file_encoding = 'utf-8'
 
 

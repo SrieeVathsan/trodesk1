@@ -14,7 +14,7 @@ MENTIONS_URL = f"https://api.twitter.com/2/users/{X_USER_ID}/mentions"
 REPLY_URL = "https://api.twitter.com/2/tweets"
 
 # OAuth1 Setup (manual headers with httpx)
-OAUTH = OAuth1(X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET, X_CONSUMER_KEY, X_CONSUMER_SECRET,signature_type='auth_header')
+OAUTH = OAuth1(X_CONSUMER_KEY, X_CONSUMER_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET, signature_type='auth_header')
 
 async def fetch_mentions(db: AsyncSession):
     """Fetch mentions from X (Twitter) API."""
