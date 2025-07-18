@@ -8,7 +8,6 @@ import os
 from dotenv import load_dotenv
 from app.core.config import IG_USER_ID,ACCESS_TOKEN,GRAPH,VERIFY_TOKEN
 import requests
-
 from app.models.models import MentionPost, Platform, User
 from app.services.db_services import get_unreplied_mentions, update_mentions_after_reply
 

@@ -34,8 +34,8 @@ class Settings(BaseSettings):
     LINKEDIN_TOKEN:str
     LINKEDIN_API_VERSION:str
     AUTHUR_URN:str
-
-    class Config:
+    
+    class ConfigDict:
         env_file_encoding = 'utf-8'
 
 
