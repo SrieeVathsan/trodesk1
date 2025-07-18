@@ -9,7 +9,7 @@ from app.services.analytics_service import (
 
 router = APIRouter(tags=["analytics"])
 
-@router.get("/sentiment")
+@router.get("/analytics/sentiment")
 async def sentiment_analytics(
     days: int = 7,
     db: AsyncSession = Depends(get_db)
@@ -19,7 +19,7 @@ async def sentiment_analytics(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/tickets")
+@router.get("/analytics/tickets")
 async def ticket_analytics(
     days: int = 30,
     db: AsyncSession = Depends(get_db)
@@ -29,7 +29,7 @@ async def ticket_analytics(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/tickets/{mention_id}/resolve")
+@router.post("/analytics/tickets/{mention_id}/resolve")
 async def resolve_ticket_endpoint(
     mention_id: str,
     db: AsyncSession = Depends(get_db)

@@ -278,7 +278,7 @@ async def process_unreplied_ig_mentions(db: AsyncSession):
         
         # Call Instagram API
         try:
-            result = await reply_to_mention(mention.id, reply_text)
+            result = await reply_to_mention(db, mention.id, reply_text)
             
             if result["success"]:
                 updates.append({

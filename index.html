@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* .platform-facebook { @apply border-l-4 border-blue-500 bg-blue-50; }
+        .platform-instagram { @apply border-l-4 border-pink-500 bg-pink-50; }
+        .platform-twitter { @apply border-l-4 border-sky-500 bg-sky-50; }
+        .platform-linkedin { @apply border-l-4 border-blue-700 bg-blue-50; } */
+        
+        .mention-card {
+            transition: all 0.2s ease;
+        }
+        
+        .mention-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .modal-backdrop {
+            backdrop-filter: blur(4px);
+        }
+        
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // API service that connects to your backend
+        const apiService = {
+            baseUrl: 'http://localhost:8000', // Update with your backend URL
+            
+            async fetchMentions() {
+                try {
+                    const response = await axios.get(`${this.baseUrl}/all/mentions`);
+                    // Transform the data to match the frontend structure
+                    const mentions = [];
+                    
+                    // Facebook mentions
+                    if (response.data.facebook) {
+                        response.data.facebook.forEach(mention => {
+                            mentions.push({
+                                id: mention.id || mention.post_id,
+                                platform: 'facebook',
+                                username: mention.username || 'Facebook User',
+                                content: mention.content || mention.message,
+                                timestamp: mention.timestamp || mention.created_at,
+                                avatar: mention.avatar || 'https://via.placeholder.com/40',
+                                sentiment: mention.sentiment || 'neutral'
+                            });
+                        });
+                    }
+                    
+                    // Instagram mentions
+                    if (response.data.instagram) {
+                        response.data.instagram.forEach(mention => {
+                            mentions.push({
+                                id: mention.id || mention.comment_id,
+                                platform: 'instagram',
+                                username: mention.username || '@instagram_user',
+                                content: mention.content || mention.text,
+                                timestamp: mention.timestamp || mention.created_at,
+                                avatar: mention.avatar || 'https://via.placeholder.com/40',
+                                sentiment: mention.sentiment || 'neutral'
+                            });
+                        });
+                    }
+                    
+                    // X (Twitter) mentions
+                    if (response.data.x) {
+                        response.data.x.forEach(mention => {
+                            mentions.push({
+                                id: mention.id || mention.tweet_id,
+                                platform: 'twitter',
+                                username: mention.username || '@twitter_user',
+                                content: mention.content || mention.text,
+                                timestamp: mention.timestamp || mention.created_at,
+                                avatar: mention.avatar || 'https://via.placeholder.com/40',
+                                sentiment: mention.sentiment || 'neutral'
+                            });
+                        });
+                    }
+                    
+                    return mentions;
+                } catch (error) {
+                    console.error('Error fetching mentions:', error);
+                    throw error;
+                }
+            },
+
+            async fetchConversations() {
+                try {
+                    // You'll need to implement these endpoints in your backend
+                    const facebookConvos = await axios.get(`${this.baseUrl}/facebook/conversations`);
+                    const instagramConvos = await axios.get(`${this.baseUrl}/instagram/conversations`);
+                    const linkedinConvos = await axios.get(`${this.baseUrl}/linkedin/conversations`);
+                    
+                    const conversations = [];
+                    
+                    // Facebook conversations
+                    if (facebookConvos.data) {
+                        facebookConvos.data.forEach(conv => {
+                            conversations.push({
+                                id: conv.id,
+                                platform: 'facebook',
+                                username: conv.username || 'Facebook User',
+                                lastMessage: conv.last_message || 'No messages',
+                                timestamp: conv.timestamp || conv.updated_at,
+                                unread: conv.unread || false,
+                                avatar: conv.avatar || 'https://via.placeholder.com/40'
+                            });
+                        });
+                    }
+                    
+                    // Instagram conversations
+                    if (instagramConvos.data) {
+                        instagramConvos.data.forEach(conv => {
+                            conversations.push({
+                                id: conv.id,
+                                platform: 'instagram',
+                                username: conv.username || '@instagram_user',
+                                lastMessage: conv.last_message || 'No messages',
+                                timestamp: conv.timestamp || conv.updated_at,
+                                unread: conv.unread || false,
+                                avatar: conv.avatar || 'https://via.placeholder.com/40'
+                            });
+                        });
+                    }
+                    
+                    // LinkedIn conversations
+                    if (linkedinConvos.data) {
+                        linkedinConvos.data.forEach(conv => {
+                            conversations.push({
+                                id: conv.id,
+                                platform: 'linkedin',
+                                username: conv.username || 'LinkedIn User',
+                                lastMessage: conv.last_message || 'No messages',
+                                timestamp: conv.timestamp || conv.updated_at,
+                                unread: conv.unread || false,
+                                avatar: conv.avatar || 'https://via.placeholder.com/40'
+                            });
+                        });
+                    }
+                    
+                    return conversations;
+                } catch (error) {
+                    console.error('Error fetching conversations:', error);
+                    throw error;
+                }
+            },
+
+            async fetchTickets() {
+                try {
+                    const sentimentResponse = await axios.get(`${this.baseUrl}/analytics/sentiment`);
+                    const ticketsResponse = await axios.get(`${this.baseUrl}/analytics/tickets`);
+                    
+                    return {
+                        analytics: {
+                            total: ticketsResponse.data.total || 0,
+                            unresolved: ticketsResponse.data.unresolved || 0,
+                            resolved: ticketsResponse.data.resolved || 0,
+                            sentiment: {
+                                positive: sentimentResponse.data.positive || 0,
+                                neutral: sentimentResponse.data.neutral || 0,
+                                negative: sentimentResponse.data.negative || 0
+                            }
+                        },
+                        tickets: ticketsResponse.data.tickets || []
+                    };
+                } catch (error) {
+                    console.error('Error fetching tickets:', error);
+                    throw error;
+                }
+            },
+
+            async sendReply(platform, mentionId, message) {
+                try {
+                    let response;
+                    switch (platform) {
+                        case 'facebook':
+                            response = await axios.post(`${this.baseUrl}/facebook/reply`, {
+                                post_id: mentionId,
+                                message: message
+                            });
+                            break;
+                        case 'instagram':
+                            response = await axios.post(`${this.baseUrl}/instagram/private-reply`, {
+                                comment_id: mentionId,
+                                message: message
+                            });
+                            break;
+                        case 'twitter':
+                            response = await axios.post(`${this.baseUrl}/x/reply`, {
+                                tweet_id: mentionId,
+                                message: message
+                            });
+                            break;
+                        case 'linkedin':
+                            response = await axios.post(`${this.baseUrl}/linkedin/posts/${mentionId}/comments`, {
+                                text: message
+                            });
+                            break;
+                        default:
+                            throw new Error('Unsupported platform');
+                    }
+                    return response.data;
+                } catch (error) {
+                    console.error('Error sending reply:', error);
+                    throw error;
+                }
+            },
+
+            async resolveTicket(ticketId) {
+                try {
+                    const response = await axios.post(`${this.baseUrl}/analytics/tickets/${ticketId}/resolve`);
+                    return response.data;
+                } catch (error) {
+                    console.error('Error resolving ticket:', error);
+                    throw error;
+                }
+            }
+        };
+
+        // Platform configuration
+        const platformConfig = {
+            facebook: {
+                name: 'Facebook',
+                color: 'blue',
+                icon: '📘',
+                bgClass: 'platform-facebook'
+            },
+            instagram: {
+                name: 'Instagram',
+                color: 'pink',
+                icon: '📷',
+                bgClass: 'platform-instagram'
+            },
+            twitter: {
+                name: 'Twitter/X',
+                color: 'sky',
+                icon: '🐦',
+                bgClass: 'platform-twitter'
+            },
+            linkedin: {
+                name: 'LinkedIn',
+                color: 'blue',
+                icon: '💼',
+                bgClass: 'platform-linkedin'
+            }
+        };
+
+        // Utility functions
+        const formatTimestamp = (timestamp) => {
+            if (!timestamp) return 'Just now';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            return `${days}d ago`;
+        };
+
+        const getSentimentColor = (sentiment) => {
+            switch (sentiment) {
+                case 'positive': return 'text-green-600';
+                case 'negative': return 'text-red-600';
+                default: return 'text-gray-600';
+            }
+        };
+
+        const getSentimentIcon = (sentiment) => {
+            switch (sentiment) {
+                case 'positive': return '😊';
+                case 'negative': return '😞';
+                default: return '😐';
+            }
+        };
+
+        // Components
+        const LoadingSpinner = () => (
+            <div className="flex justify-center items-center py-8">
+                <div className="loading-spinner w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+            </div>
+        );
+
+        const ErrorMessage = ({ message, onRetry }) => (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                    <div className="ml-3">
+                        <p className="text-sm text-red-700">{message}</p>
+                        {onRetry && (
+                            <button
+                                onClick={onRetry}
+                                className="mt-2 text-sm text-red-600 hover:text-red-500 font-medium"
+                            >
+                                Retry
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+
+        const ReplyModal = ({ isOpen, onClose, mention, onSendReply }) => {
+            const [replyText, setReplyText] = useState('');
+            const [sending, setSending] = useState(false);
+            const [error, setError] = useState(null);
+
+            const handleSend = async () => {
+                if (!replyText.trim()) return;
+                
+                setSending(true);
+                setError(null);
+                try {
+                    await onSendReply(mention.platform, mention.id, replyText);
+                    setReplyText('');
+                    onClose();
+                } catch (error) {
+                    setError(error.response?.data?.detail || error.message || 'Failed to send reply');
+                } finally {
+                    setSending(false);
+                }
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 modal-backdrop flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+                        <div className="p-6 border-b">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-lg font-semibold">Reply to {mention?.username}</h3>
+                                <button 
+                                    onClick={onClose}
+                                    className="text-gray-400 hover:text-gray-600 text-2xl"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <div className="flex items-center mt-2 space-x-2">
+                                <span className="text-2xl">{platformConfig[mention?.platform]?.icon}</span>
+                                <span className="text-sm text-gray-600">{platformConfig[mention?.platform]?.name}</span>
+                            </div>
+                        </div>
+                        
+                        <div className="p-6">
+                            {error && (
+                                <div className="mb-4">
+                                    <ErrorMessage message={error} />
+                                </div>
+                            )}
+                            
+                            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                                <p className="text-gray-800">{mention?.content}</p>
+                                <div className="flex items-center mt-2 space-x-2 text-sm text-gray-500">
+                                    <span>{getSentimentIcon(mention?.sentiment)}</span>
+                                    <span>{formatTimestamp(mention?.timestamp)}</span>
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <label className="block text-sm font-medium text-gray-700">Your Reply</label>
+                                <textarea
+                                    value={replyText}
+                                    onChange={(e) => setReplyText(e.target.value)}
+                                    placeholder="Type your reply here..."
+                                    className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                />
+                                <div className="flex justify-end space-x-3">
+                                    <button
+                                        onClick={onClose}
+                                        className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSend}
+                                        disabled={sending || !replyText.trim()}
+                                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        {sending ? 'Sending...' : 'Send Reply'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const MentionCard = ({ mention, onClick }) => {
+            const platform = platformConfig[mention.platform];
+            
+            return (
+                <div 
+                    className={`mention-card ${platform.bgClass} rounded-lg p-4 cursor-pointer fade-in`}
+                    onClick={() => onClick(mention)}
+                >
+                    <div className="flex items-start space-x-3">
+                        <img 
+                            src={mention.avatar} 
+                            alt={mention.username}
+                            className="w-10 h-10 rounded-full"
+                        />
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center space-x-2">
+                                    <span className="text-lg">{platform.icon}</span>
+                                    <span className="font-medium text-gray-900">{mention.username}</span>
+                                    <span className={`text-sm ${getSentimentColor(mention.sentiment)}`}>
+                                        {getSentimentIcon(mention.sentiment)}
+                                    </span>
+                                </div>
+                                <span className="text-sm text-gray-500">{formatTimestamp(mention.timestamp)}</span>
+                            </div>
+                            <p className="text-gray-800 text-sm leading-relaxed">{mention.content}</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ConversationCard = ({ conversation, onClick }) => {
+            const platform = platformConfig[conversation.platform];
+            
+            return (
+                <div 
+                    className={`mention-card ${platform.bgClass} rounded-lg p-4 cursor-pointer fade-in`}
+                    onClick={() => onClick(conversation)}
+                >
+                    <div className="flex items-center space-x-3">
+                        <div className="relative">
+                            <img 
+                                src={conversation.avatar} 
+                                alt={conversation.username}
+                                className="w-10 h-10 rounded-full"
+                            />
+                            {conversation.unread && (
+                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+                            )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center space-x-2">
+                                    <span className="text-lg">{platform.icon}</span>
+                                    <span className={`font-medium ${conversation.unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                                        {conversation.username}
+                                    </span>
+                                </div>
+                                <span className="text-sm text-gray-500">{formatTimestamp(conversation.timestamp)}</span>
+                            </div>
+                            <p className={`text-sm truncate ${conversation.unread ? 'text-gray-800 font-medium' : 'text-gray-600'}`}>
+                                {conversation.lastMessage}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const TicketCard = ({ ticket, onResolve }) => {
+            const platform = platformConfig[ticket.platform];
+            const priorityColors = {
+                high: 'bg-red-100 text-red-800',
+                medium: 'bg-yellow-100 text-yellow-800',
+                low: 'bg-green-100 text-green-800'
+            };
+
+            return (
+                <div className={`${platform.bgClass} rounded-lg p-4 fade-in`}>
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-2">
+                            <span className="text-lg">{platform.icon}</span>
+                            <h4 className="font-medium text-gray-900">{ticket.title}</h4>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${priorityColors[ticket.priority]}`}>
+                                {ticket.priority}
+                            </span>
+                            {ticket.status === 'unresolved' && (
+                                <button
+                                    onClick={() => onResolve(ticket.id)}
+                                    className="px-3 py-1 bg-green-600 text-white text-xs rounded-full hover:bg-green-700 transition-colors"
+                                >
+                                    Resolve
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span className={`font-medium ${ticket.status === 'resolved' ? 'text-green-600' : 'text-orange-600'}`}>
+                            {ticket.status === 'resolved' ? '✅ Resolved' : '⏳ Pending'}
+                        </span>
+                        <span>{formatTimestamp(ticket.timestamp)}</span>
+                    </div>
+                </div>
+            );
+        };
+
+        const Dashboard = () => {
+            const [activeTab, setActiveTab] = useState('mentions');
+            const [mentions, setMentions] = useState([]);
+            const [conversations, setConversations] = useState([]);
+            const [tickets, setTickets] = useState({ analytics: {}, tickets: [] });
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState(null);
+            const [selectedMention, setSelectedMention] = useState(null);
+            const [showReplyModal, setShowReplyModal] = useState(false);
+            const intervalRef = useRef(null);
+
+            const loadData = async () => {
+                setLoading(true);
+                setError(null);
+                try {
+                    switch (activeTab) {
+                        case 'mentions':
+                            const mentionsData = await apiService.fetchMentions();
+                            setMentions(mentionsData);
+                            break;
+                        case 'conversations':
+                            const conversationsData = await apiService.fetchConversations();
+                            setConversations(conversationsData);
+                            break;
+                        case 'tickets':
+                            const ticketsData = await apiService.fetchTickets();
+                            setTickets(ticketsData);
+                            break;
+                    }
+                } catch (error) {
+                    console.error('Failed to load data:', error);
+                    setError(error.response?.data?.detail || error.message || 'Failed to load data');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            useEffect(() => {
+                loadData();
+                
+                // Set up polling for real-time updates
+                intervalRef.current = setInterval(loadData, 30000); // Poll every 30 seconds
+                
+                return () => {
+                    if (intervalRef.current) {
+                        clearInterval(intervalRef.current);
+                    }
+                };
+            }, [activeTab]);
+
+            const handleMentionClick = (mention) => {
+                setSelectedMention(mention);
+                setShowReplyModal(true);
+            };
+
+            const handleSendReply = async (platform, mentionId, message) => {
+                try {
+                    await apiService.sendReply(platform, mentionId, message);
+                    // Refresh mentions after reply
+                    await loadData();
+                } catch (error) {
+                    throw error;
+                }
+            };
+
+            const handleResolveTicket = async (ticketId) => {
+                try {
+                    await apiService.resolveTicket(ticketId);
+                    // Refresh tickets after resolving
+                    await loadData();
+                } catch (error) {
+                    console.error('Failed to resolve ticket:', error);
+                    setError(error.response?.data?.detail || error.message || 'Failed to resolve ticket');
+                }
+            };
+
+            const tabs = [
+                { id: 'mentions', label: 'Mentions', count: mentions.length },
+                { id: 'conversations', label: 'Conversations', count: conversations.length },
+                { id: 'tickets', label: 'Tickets', count: tickets.tickets?.length || 0 }
+            ];
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    {/* Header */}
+                    <header className="bg-white shadow-sm border-b">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex items-center justify-between h-16">
+                                <div className="flex items-center space-x-4">
+                                    <h1 className="text-2xl font-bold text-gray-900">Social Media Dashboard</h1>
+                                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                        <span>Live Updates</span>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={loadData}
+                                    disabled={loading}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                                >
+                                    {loading ? 'Refreshing...' : 'Refresh'}
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Navigation Tabs */}
+                    <nav className="bg-white border-b">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex space-x-8">
+                                {tabs.map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                                            activeTab === tab.id
+                                                ? 'border-blue-500 text-blue-600'
+                                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        }`}
+                                    >
+                                        {tab.label}
+                                        {tab.count > 0 && (
+                                            <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2 rounded-full text-xs">
+                                                {tab.count}
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </nav>
+
+                    {/* Main Content */}
+                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        {error && (
+                            <ErrorMessage message={error} onRetry={loadData} />
+                        )}
+                        
+                        {loading ? (
+                            <LoadingSpinner />
+                        ) : (
+                            <>
+                                {activeTab === 'mentions' && (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <h2 className="text-xl font-semibold text-gray-900">All Mentions</h2>
+                                            <div className="text-sm text-gray-500">
+                                                {mentions.length} mentions found
+                                            </div>
+                                        </div>
+                                        {mentions.length === 0 ? (
+                                            <div className="text-center py-12">
+                                                <p className="text-gray-500">No mentions found</p>
+                                            </div>
+                                        ) : (
+                                            <div className="grid gap-4">
+                                                {mentions.map(mention => (
+                                                    <MentionCard 
+                                                        key={mention.id} 
+                                                        mention={mention} 
+                                                        onClick={handleMentionClick}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeTab === 'conversations' && (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <h2 className="text-xl font-semibold text-gray-900">Conversations</h2>
+                                            <div className="text-sm text-gray-500">
+                                                {conversations.filter(c => c.unread).length} unread
+                                            </div>
+                                        </div>
+                                        {conversations.length === 0 ? (
+                                            <div className="text-center py-12">
+                                                <p className="text-gray-500">No conversations found</p>
+                                            </div>
+                                        ) : (
+                                            <div className="grid gap-4">
+                                                {conversations.map(conversation => (
+                                                    <ConversationCard 
+                                                        key={conversation.id} 
+                                                        conversation={conversation} 
+                                                        onClick={handleMentionClick}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeTab === 'tickets' && (
+                                    <div className="space-y-6">
+                                        <h2 className="text-xl font-semibold text-gray-900">Support Tickets</h2>
+                                        
+                                        {/* Analytics Cards */}
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                            <div className="bg-white rounded-lg p-6 shadow-sm">
+                                                <div className="flex items-center">
+                                                    <div className="p-2 bg-blue-100 rounded-lg">
+                                                        <span className="text-2xl">📊</span>
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <p className="text-sm font-medium text-gray-600">Total Tickets</p>
+                                                        <p className="text-2xl font-bold text-gray-900">{tickets.analytics.total || 0}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="bg-white rounded-lg p-6 shadow-sm">
+                                                <div className="flex items-center">
+                                                    <div className="p-2 bg-orange-100 rounded-lg">
+                                                        <span className="text-2xl">⏳</span>
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <p className="text-sm font-medium text-gray-600">Unresolved</p>
+                                                        <p className="text-2xl font-bold text-orange-600">{tickets.analytics.unresolved || 0}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="bg-white rounded-lg p-6 shadow-sm">
+                                                <div className="flex items-center">
+                                                    <div className="p-2 bg-green-100 rounded-lg">
+                                                        <span className="text-2xl">✅</span>
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <p className="text-sm font-medium text-gray-600">Resolved</p>
+                                                        <p className="text-2xl font-bold text-green-600">{tickets.analytics.resolved || 0}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="bg-white rounded-lg p-6 shadow-sm">
+                                                <div className="flex items-center">
+                                                    <div className="p-2 bg-purple-100 rounded-lg">
+                                                        <span className="text-2xl">😊</span>
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <p className="text-sm font-medium text-gray-600">Positive Sentiment</p>
+                                                        <p className="text-2xl font-bold text-purple-600">{tickets.analytics.sentiment?.positive || 0}%</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Tickets List */}
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-medium text-gray-900">Recent Tickets</h3>
+                                            {tickets.tickets?.length === 0 ? (
+                                                <div className="text-center py-12">
+                                                    <p className="text-gray-500">No tickets found</p>
+                                                </div>
+                                            ) : (
+                                                <div className="grid gap-4">
+                                                    {tickets.tickets?.map(ticket => (
+                                                        <TicketCard 
+                                                            key={ticket.id} 
+                                                            ticket={ticket} 
+                                                            onResolve={handleResolveTicket}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </main>
+
+                    {/* Reply Modal */}
+                    <ReplyModal
+                        isOpen={showReplyModal}
+                        onClose={() => setShowReplyModal(false)}
+                        mention={selectedMention}
+                        onSendReply={handleSendReply}
+                    />
+                </div>
+            );
+        };
+
+        ReactDOM.render(<Dashboard />, document.getElementById('root'));
+    </script>
+</body>
+</html>
