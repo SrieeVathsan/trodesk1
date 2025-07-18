@@ -38,9 +38,10 @@ async def send_private_reply(comment_id: str, message: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/instagram/reply-to-mentions")
-async def send_reply_for_comments(media_id: str, comment_text: str):  
+async def send_reply_for_comments(media_id: str, comment_text: str, db: AsyncSession = Depends(get_db)):
+    
     try:
-        return await reply_to_mention(media_id, comment_text)  
+        return await reply_to_mention(db, media_id, comment_text)  
     except Exception as e:
         app_logger.info(f"Error replying the comments {e}")
         raise HTTPException(status_code=500, detail=str(e))

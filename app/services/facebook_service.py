@@ -134,7 +134,7 @@ async def process_unreplied_fb_mentions(db: AsyncSession):
         
         # Call Facebook API
         try:
-            result = await reply_to_post(mention.id, reply_text)
+            result = await reply_to_post(db, mention.id, reply_text)
             
             if result["success"]:
                 updates.append({
@@ -153,7 +153,7 @@ async def process_unreplied_fb_mentions(db: AsyncSession):
             })
     
     # Bulk update DB
-    await update_mentions_after_reply(db, updates)
+    # await update_mentions_after_reply(db, updates)
     
     return {
         "status": "done",
@@ -169,7 +169,7 @@ def generate_custom_reply(mention: MentionPost) -> str:
         return "Glad you liked it! 😊"
     return "Thank you for your post!"
 
-async def reply_to_post(post_id: str, message: str):
+async def reply_to_post(db: AsyncSession, post_id: str, message: str):
     """Reply to a Facebook post or comment."""
     async with AsyncClient() as client:
         url = f"{GRAPH}/{post_id}"
@@ -182,6 +182,10 @@ async def reply_to_post(post_id: str, message: str):
             data = response.json()
             if "error" in data:
                 raise HTTPException(status_code=400, detail=data["error"]["message"])
+            
+            #db update
+            await update_mentions_after_reply(db, [{"id": post_id, "reply_id": data.get("id"), "message": message}])
+
             return {
                 "success": True,
                 "data": data

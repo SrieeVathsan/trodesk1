@@ -50,7 +50,7 @@ async def fetch_mentions(db: AsyncSession):
         await store_mentions(tweets, db, platform_id="x")
     return tweets
 
-def reply_to_tweet(tweet_id: str, text: str):
+async def reply_to_tweet(db: AsyncSession, tweet_id: str, text: str):
     payload = {
         "text": text,
         "reply": {
@@ -61,11 +61,16 @@ def reply_to_tweet(tweet_id: str, text: str):
     response = requests.post(REPLY_URL, auth=OAUTH, json=payload)
 
     if response.status_code == 201:
+        await update_mentions_after_reply(db, [{"id": tweet_id, "reply_id": response.json()["data"]["id"], "message": text}])
+
         return {
             "status": "success",
             "reply_id": response.json()["data"]["id"],
             "tweet_id": tweet_id
         }
+    
+    #db update
+
     return {
         "status": "error",
         "tweet_id": tweet_id,
@@ -87,7 +92,7 @@ async def process_unreplied_mentions(db: AsyncSession):
         reply_text = generate_custom_reply(mention)
 
         # Call X API
-        result = reply_to_tweet(mention.id, f"@{mention.user.username} {reply_text}")
+        result = reply_to_tweet(db, mention.id, f"@{mention.user.username} {reply_text}")
 
         if result["status"] == "success":
             updates.append({
@@ -98,7 +103,7 @@ async def process_unreplied_mentions(db: AsyncSession):
             failed.append(result)
 
     # Bulk update DB
-    await update_mentions_after_reply(db, updates)
+    # await update_mentions_after_reply(db, updates)
 
     return {
         "status": "done",

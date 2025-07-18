@@ -1,7 +1,7 @@
 import asyncio
 from app.api.v1.endpoints.facebook.facebook_api import get_facebook_mentions
 from app.api.v1.endpoints.instagram.insta_api import get_mentions as get_instagram_mentions
-from app.api.v1.endpoints.x.x_service import get_mentions as get_x_mentions
+from app.api.v1.endpoints.x.x_api import get_mentions as get_x_mentions
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter,Depends
 from app.db.session import get_db

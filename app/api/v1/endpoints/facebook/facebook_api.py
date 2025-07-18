@@ -25,9 +25,9 @@ async def get_facebook_mentions(db:AsyncSession=Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/facebook/reply")
-async def reply_to_facebook_post(post_id: str, message: str):
+async def reply_to_facebook_post(post_id: str, message: str, db: AsyncSession = Depends(get_db)):
     try:
-        return await reply_to_post(post_id, message)  
+        return await reply_to_post(db, post_id, message)  
     except Exception as e:
         app_logger.info(f"Error sending reply to the user in facebook")
         raise HTTPException(status_code=500, detail=str(e))

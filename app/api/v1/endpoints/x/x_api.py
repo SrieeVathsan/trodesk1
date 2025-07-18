@@ -17,8 +17,8 @@ async def get_mentions(db: AsyncSession = Depends(get_db)):
     
 
 @router.post("/x/reply")
-async def reply_tweet(db: AsyncSession = Depends(get_db)):
+async def reply_tweet(tweet_id: str, comment_text: str, db: AsyncSession = Depends(get_db)):
     try:
-        return await process_unreplied_mentions(db)
+        return await reply_to_tweet(db, tweet_id, comment_text)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

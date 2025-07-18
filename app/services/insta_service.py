@@ -297,7 +297,7 @@ async def process_unreplied_ig_mentions(db: AsyncSession):
             })
     
     # Bulk update DB
-    await update_mentions_after_reply(db, updates)
+    # await update_mentions_after_reply(db, updates)
     
     return {
         "status": "done",
@@ -344,7 +344,7 @@ async def instagram_private_reply(comment_id: str, message: str):
 
 
 
-async def reply_to_mention(media_id: str, comment_text: str):
+async def reply_to_mention(db: AsyncSession, media_id: str, comment_text: str):
     """
     Reply to a post where your Instagram account is tagged/mentioned.
     Requires:
@@ -362,6 +362,14 @@ async def reply_to_mention(media_id: str, comment_text: str):
             data = resp.json()
             if "error" in data:
                 raise HTTPException(status_code=400, detail=data["error"]["message"])
+            
+            # Update the mention in the database
+            await update_mentions_after_reply(db, [{
+                "id": media_id,
+                "reply_id": data.get("id"),
+                "message": comment_text
+            }])
+
             return {
                 "success": True,
                 "message": f"Replied to mention (ID: {media_id})",

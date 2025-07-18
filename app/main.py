@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from app.api.v1.endpoints.instagram.insta_api import router as insta_router
 from app.api.v1.endpoints.facebook.facebook_api import router as facebook_router
-from app.api.v1.endpoints.x.x_service import router as x_router
+from app.api.v1.endpoints.x.x_api import router as x_router
 from app.api.v1.endpoints.analytics.analytics_api import router as analytics_router
 from app.api.v1.endpoints.linkedin.linkedin_api import router as linkedin_router
 from app.api.v1.endpoints.all_apis.all_api import router as all_router
