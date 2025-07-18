@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     LINKEDIN_TOKEN:str
     LINKEDIN_API_VERSION:str
     AUTHUR_URN:str
+    GROQ_API_KEY: str 
     
     class ConfigDict:
         env_file_encoding = 'utf-8'

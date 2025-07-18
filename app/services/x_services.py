@@ -9,6 +9,8 @@ from app.core.config import X_USER_ID, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET, X_
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.utils.llm_call import llm_call
+
 
 MENTIONS_URL = f"https://api.twitter.com/2/users/{X_USER_ID}/mentions"
 REPLY_URL = "https://api.twitter.com/2/tweets"
@@ -89,7 +91,7 @@ async def process_unreplied_mentions(db: AsyncSession):
 
     for mention in mentions:
         # 👇 Customize reply text here
-        reply_text = generate_custom_reply(mention)
+        reply_text = await llm_call(mention.text)
 
         # Call X API
         result = reply_to_tweet(db, mention.id, f"@{mention.user.username} {reply_text}")
@@ -97,7 +99,8 @@ async def process_unreplied_mentions(db: AsyncSession):
         if result["status"] == "success":
             updates.append({
                 "id": mention.id,
-                "reply_id": result["reply_id"]
+                "reply_id": result["reply_id"],
+                "message": reply_text
             })
         else:
             failed.append(result)

@@ -5,6 +5,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.models import Platform, User, MentionPost
 from app.services.db_services import store_mentions, get_unreplied_mentions, update_mentions_after_reply
+from app.utils.llm_call import llm_call
 
 async def get_fb_posts(db: AsyncSession):
     """Get posts from a Facebook Page and store in DB."""
@@ -130,8 +131,8 @@ async def process_unreplied_fb_mentions(db: AsyncSession):
             continue
             
         # Customize reply text here
-        reply_text = generate_custom_reply(mention)
-        
+        reply_text = await llm_call(mention.text)
+
         # Call Facebook API
         try:
             result = await reply_to_post(db, mention.id, reply_text)
@@ -139,7 +140,8 @@ async def process_unreplied_fb_mentions(db: AsyncSession):
             if result["success"]:
                 updates.append({
                     "id": mention.id,
-                    "reply_id": result["data"]["id"]  # Assuming API returns the reply ID
+                    "reply_id": result["data"]["id"],
+                    "message": reply_text  # Assuming API returns the reply ID
                 })
             else:
                 failed.append({

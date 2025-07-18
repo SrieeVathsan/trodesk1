@@ -10,6 +10,7 @@ from app.core.config import IG_USER_ID,ACCESS_TOKEN,GRAPH,VERIFY_TOKEN
 import requests
 from app.models.models import MentionPost, Platform, User
 from app.services.db_services import get_unreplied_mentions, update_mentions_after_reply
+from app.utils.llm_call import llm_call
 
 
 
@@ -274,8 +275,8 @@ async def process_unreplied_ig_mentions(db: AsyncSession):
             continue
             
         # Customize reply text here
-        reply_text = generate_custom_reply(mention)
-        
+        reply_text = await llm_call(mention.text)
+
         # Call Instagram API
         try:
             result = await reply_to_mention(db, mention.id, reply_text)
@@ -283,7 +284,8 @@ async def process_unreplied_ig_mentions(db: AsyncSession):
             if result["success"]:
                 updates.append({
                     "id": mention.id,
-                    "reply_id": result["data"]["id"]  # Assuming API returns the reply ID
+                    "reply_id": result["data"]["id"],  # Assuming API returns the reply ID
+                    "message": reply_text  
                 })
             else:
                 failed.append({
