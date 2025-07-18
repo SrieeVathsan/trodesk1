@@ -9,25 +9,40 @@ from app.main import app
 
 client = TestClient(app)
 
+def test_sentiment_with_mocked_counts(client, mock_db_session):
+    """Test sentiment analytics endpoint with mocked counts."""
+    mock_sentiment = AsyncMock(return_value={
+        "positive": 4,
+        "negative": 3,
+        "total": 7,
+    })
+
+    # Patch the service function where your endpoint imports it
+    with patch("app.api.v1.endpoints.analytics.analytics_api.get_sentiment_counts", new=mock_sentiment):
+        response = client.get("/sentiment", params={"days": 7})
+        print("\n\n\n",response.text, "\n\n\n")
+        assert response.status_code == 200
+        assert response.json()["positive"] == 4
+        assert response.json()["negative"] == 3
 
 
-def test_get_sentiment_analytics(mock_db_session):
-    with patch('app.services.analytics_service.get_sentiment_counts') as mock_sentiment:
-        mock_sentiment.return_value = {
-            "positive": 5,
-            "negative": 2,
-            "total": 7
-        }
+# def test_get_sentiment_analytics(mock_db_session):
+#     with patch('app.services.analytics_service.get_sentiment_counts') as mock_sentiment:
+#         mock_sentiment.return_value = {
+#             "positive": 5,
+#             "negative": 2,
+#             "total": 7
+#         }
         
-        response = client.get(
-            "/sentiment",
-            params={"days": 7},
-            headers={"Content-Type": "application/json"}
-        )
+#         response = client.get(
+#             "/sentiment",
+#             params={"days": 7},
+#             headers={"Content-Type": "application/json"}
+#         )
         
-        assert response.status_code == status.HTTP_200_OK
-        assert response.json()["positive"] == 5
-        assert response.json()["negative"] == 2
+#         assert response.status_code == status.HTTP_200_OK
+#         assert response.json()["positive"] == 3
+#         assert response.json()["negative"] == 3
 
 
 def test_resolve_ticket(mock_db_session, mock_mention):
