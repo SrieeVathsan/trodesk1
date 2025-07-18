@@ -3,11 +3,11 @@ from httpx import AsyncClient
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
-from app.api.v1.endpoints.instagram.insta_service import router as insta_router
-from app.api.v1.endpoints.facebook.facebook_service import router as facebook_router
+from app.api.v1.endpoints.instagram.insta_api import router as insta_router
+from app.api.v1.endpoints.facebook.facebook_api import router as facebook_router
 from app.api.v1.endpoints.x.x_service import router as x_router
 from app.api.v1.endpoints.analytics.analytics_api import router as analytics_router
-import requests
+from app.api.v1.endpoints.linkedin.linkedin_api import router as linkedin_router
 
 from app.db.session import Base, get_engine
 load_dotenv()
@@ -27,6 +27,7 @@ app.include_router(insta_router)
 app.include_router(facebook_router)
 app.include_router(x_router)
 app.include_router(analytics_router)
+app.include_router(linkedin_router)
 
 print("GRAPH-------->",GRAPH)
 print("ACCess token----------------------->",ACCESS_TOKEN)
@@ -42,3 +43,6 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     await app.state.engine.dispose() 
+
+from app.core.settings import get_settings
+print("Settings loaded:", get_settings().model_dump())

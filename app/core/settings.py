@@ -31,11 +31,15 @@ class Settings(BaseSettings):
     X_CONSUMER_SECRET: str
     X_USER_ID: int
     DATABASE_URL: str
-    
+    LINKEDIN_TOKEN:str
+    LINKEDIN_API_VERSION:str
+    AUTHUR_URN:str
+
     class Config:
         env_file_encoding = 'utf-8'
 
 
-@lru_cache()
+# @lru_cache()
 def get_settings():
     return Settings()
+
