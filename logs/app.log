@@ -1645,3 +1645,35 @@
 {"asctime": "2025-07-21 14:43:51,151", "levelname": "INFO", "name": "app", "message": "\u26a1 Executing response plan for 18363339799144892"}
 {"asctime": "2025-07-21 14:43:59,997", "levelname": "INFO", "name": "app", "message": "\ud83e\udd16 Autonomous Agentic AI service stopped"}
 {"asctime": "2025-07-21 14:43:59,997", "levelname": "INFO", "name": "app", "message": "Background tasks stopped successfully"}
+{"asctime": "2025-07-21 14:56:10,729", "levelname": "INFO", "name": "app", "message": "Background tasks started successfully"}
+{"asctime": "2025-07-21 14:56:10,730", "levelname": "INFO", "name": "app", "message": "\ud83e\udd16 Starting autonomous Agentic AI service (60-second intervals)"}
+{"asctime": "2025-07-21 14:56:10,731", "levelname": "INFO", "name": "app", "message": "\ud83d\ude80 Starting autonomous Agentic AI cycle"}
+{"asctime": "2025-07-21 14:56:15,329", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-07-21 14:56:15,329", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-07-21 14:56:15,330", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-07-21 14:56:15,397", "levelname": "INFO", "name": "app", "message": "\ud83e\udd16 Agentic AI processing mention 18013148813763901 from instagram"}
+{"asctime": "2025-07-21 14:56:15,397", "levelname": "INFO", "name": "app", "message": "\ud83d\udcda Retrieved user context: 0 previous posts"}
+{"asctime": "2025-07-21 14:56:15,397", "levelname": "INFO", "name": "app", "message": "\ud83d\udccb Creating response plan for 18013148813763901"}
+{"asctime": "2025-07-21 14:56:16,100", "levelname": "INFO", "name": "app", "message": "\ud83d\udccb Plan created: {'engagement': 'like', 'response_type': 'curiosity', 'response_content': 'What kind of beats?'}"}
+{"asctime": "2025-07-21 14:56:16,100", "levelname": "INFO", "name": "app", "message": "\ud83d\udee0\ufe0f Selecting tools for 18013148813763901"}
+{"asctime": "2025-07-21 14:56:16,422", "levelname": "INFO", "name": "app", "message": "\ud83d\udee0\ufe0f Selected tools: ['reply_generator', 'engagement_predictor', 'personalization_engine']"}
+{"asctime": "2025-07-21 14:56:16,423", "levelname": "INFO", "name": "app", "message": "\u26a1 Executing response plan for 18013148813763901"}
+{"asctime": "2025-07-21 14:56:17,892", "levelname": "ERROR", "name": "app", "message": "\u274c Agentic AI error for mention 18013148813763901: 500: Failed to reply: 400: (#10) Application does not have permission for this action"}
+{"asctime": "2025-07-21 14:56:17,892", "levelname": "ERROR", "name": "app", "message": "\u274c Agentic AI failed to process mention 18013148813763901: 500: Failed to reply: 400: (#10) Application does not have permission for this action"}
+{"asctime": "2025-07-21 14:56:17,894", "levelname": "INFO", "name": "app", "message": "\ud83e\udd16 Agentic AI processing mention 18363339799144892 from instagram"}
+{"asctime": "2025-07-21 14:56:17,902", "levelname": "INFO", "name": "app", "message": "\ud83d\udcda Retrieved user context: 5 previous posts"}
+{"asctime": "2025-07-21 14:56:17,903", "levelname": "INFO", "name": "app", "message": "\ud83d\udccb Creating response plan for 18363339799144892"}
+{"asctime": "2025-07-21 14:56:18,881", "levelname": "INFO", "name": "app", "message": "\ud83d\udccb Plan created: {'engage': True, 'apologize': True, 'offer_help': True, 'close_the_loop': True}"}
+{"asctime": "2025-07-21 14:56:18,881", "levelname": "INFO", "name": "app", "message": "\ud83d\udee0\ufe0f Selecting tools for 18363339799144892"}
+{"asctime": "2025-07-21 14:56:19,293", "levelname": "INFO", "name": "app", "message": "\ud83d\udee0\ufe0f Selected tools: ['sentiment_analyzer', 'reply_generator', 'engagement_predictor', 'escalation_detector', 'personalization_engine', 'quality_assessor']"}
+{"asctime": "2025-07-21 14:56:19,294", "levelname": "INFO", "name": "app", "message": "\u26a1 Executing response plan for 18363339799144892"}
+{"asctime": "2025-07-21 14:56:27,813", "levelname": "INFO", "name": "app", "message": "\ud83d\udcac Sent personalized reply to @surya.rs2406: Hii @surya.rs2406 We're sorry to hear that you're disappointed with our product and customer care. W..."}
+{"asctime": "2025-07-21 14:56:27,823", "levelname": "INFO", "name": "app", "message": "\u2705 Agentic processing complete for 18363339799144892"}
+{"asctime": "2025-07-21 14:56:27,823", "levelname": "INFO", "name": "app", "message": "\ud83e\udd16 Agentic AI processed mention 18363339799144892 from instagram - Quality: 0.5"}
+{"asctime": "2025-07-21 14:56:27,823", "levelname": "INFO", "name": "app", "message": "\ud83e\udd16 Agentic AI processing mention 18474039610079735 from instagram"}
+{"asctime": "2025-07-21 14:56:27,829", "levelname": "INFO", "name": "app", "message": "\ud83d\udcda Retrieved user context: 5 previous posts"}
+{"asctime": "2025-07-21 14:56:27,829", "levelname": "INFO", "name": "app", "message": "\ud83d\udccb Creating response plan for 18474039610079735"}
+{"asctime": "2025-07-21 14:56:35,816", "levelname": "INFO", "name": "app", "message": "\ud83d\udccb Plan created: {'engage': True, 'apologize': True, 'offer_help': True, 'followup': True}"}
+{"asctime": "2025-07-21 14:56:35,816", "levelname": "INFO", "name": "app", "message": "\ud83d\udee0\ufe0f Selecting tools for 18474039610079735"}
+{"asctime": "2025-07-21 14:56:45,072", "levelname": "INFO", "name": "app", "message": "\ud83e\udd16 Autonomous Agentic AI service stopped"}
+{"asctime": "2025-07-21 14:56:45,074", "levelname": "INFO", "name": "app", "message": "Background tasks stopped successfully"}

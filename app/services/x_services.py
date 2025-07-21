@@ -10,6 +10,7 @@ from app.core.config import X_USER_ID, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET, X_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
+
 MENTIONS_URL = f"https://api.twitter.com/2/users/{X_USER_ID}/mentions"
 REPLY_URL = "https://api.twitter.com/2/tweets"
 
@@ -70,6 +71,9 @@ async def reply_to_tweet(db: AsyncSession, tweet_id: str, text: str):
             "reply_id": response.json()["data"]["id"],
             "tweet_id": tweet_id
         }
+    
+    #db update
+
     
     #db update
 
