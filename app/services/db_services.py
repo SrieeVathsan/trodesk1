@@ -24,6 +24,7 @@ async def update_mentions_after_reply(db: AsyncSession, updates: List[dict]):
         if mention:
             mention.is_reply = True
             mention.replied_to_post_id = item["reply_id"]
+            mention.reply_message = item.get("message", "")
     await db.commit()
 
 async def store_mentions(mentions_response: dict, db: AsyncSession, platform_id: str):

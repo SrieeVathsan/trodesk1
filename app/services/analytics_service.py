@@ -1,6 +1,6 @@
 # app/services/analytics_service.py
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import func, select, case
+from sqlalchemy import func, select, case, desc
 from datetime import datetime, timedelta
 from app.models.models import MentionPost
 
@@ -66,6 +66,78 @@ async def get_ticket_stats(db: AsyncSession, days: int = 30):
             "end": end_date.isoformat()
         }
     }
+
+async def get_agentic_ai_analytics(db: AsyncSession, days: int = 30):
+    """Get Agentic AI reply analytics using existing MentionPost table"""
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=days)
+    
+    # Get reply stats from MentionPost table
+    reply_query = select(
+        func.count(MentionPost.id).label("total_replies"),
+        func.count(func.distinct(MentionPost.user_id)).label("unique_users_replied")
+    ).where(
+        MentionPost.created_at.between(start_date, end_date),
+        MentionPost.is_reply == True,
+        MentionPost.reply_message.isnot(None)
+    )
+    
+    result = await db.execute(reply_query)
+    total_replies, unique_users = result.one()
+    
+    return {
+        "total_ai_replies": total_replies or 0,
+        "unique_users_replied": unique_users or 0,
+        "time_period": {
+            "start": start_date.isoformat(),
+            "end": end_date.isoformat()
+        }
+    }
+
+async def get_user_reply_history(db: AsyncSession, user_id: str = None, limit: int = 10):
+    """Get user's reply history using existing MentionPost table"""
+    
+    if user_id:
+        # Reply history for specific user
+        query = select(MentionPost).where(
+            MentionPost.user_id == user_id,
+            MentionPost.reply_message.isnot(None)
+        ).order_by(desc(MentionPost.created_at)).limit(limit)
+        
+        result = await db.execute(query)
+        posts = result.scalars().all()
+        
+        return {
+            "user_id": user_id,
+            "total_replies": len(posts),
+            "reply_history": [
+                {
+                    "user_post": post.text,
+                    "ai_reply": post.reply_message,
+                    "platform": post.platform_id,
+                    "sentiment": post.sentiment,
+                    "created_at": post.created_at.isoformat() if post.created_at else None
+                } for post in posts
+            ]
+        }
+    else:
+        # Get reply counts by platform
+        platform_query = select(
+            MentionPost.platform_id,
+            func.count(MentionPost.id).label("count")
+        ).where(
+            MentionPost.reply_message.isnot(None)
+        ).group_by(MentionPost.platform_id)
+        
+        result = await db.execute(platform_query)
+        platform_stats = result.all()
+        
+        return {
+            "platform_breakdown": {
+                platform: count for platform, count in platform_stats
+            },
+            "total_replies": sum(count for _, count in platform_stats)
+        }
 
 async def resolve_ticket(mention_id: str, db: AsyncSession):
     """Mark a mention as resolved"""

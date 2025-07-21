@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.models import Platform, User, MentionPost
-from app.services.db_services import store_mentions, get_unreplied_mentions, update_mentions_after_reply
+from app.services.db_services import get_unreplied_mentions
 
 async def get_fb_posts(db: AsyncSession):
     """Get posts from a Facebook Page and store in DB."""
@@ -115,52 +115,6 @@ async def store_facebook_mentions(response: dict, db: AsyncSession, platform_id:
     
     await db.commit()
 
-async def process_unreplied_fb_mentions(db: AsyncSession):
-    """Process and reply to unreplied Facebook mentions."""
-    mentions = await get_unreplied_mentions(db)
-    
-    if not mentions:
-        return {"status": "no_unreplied_mentions"}
-    
-    updates = []
-    failed = []
-    
-    for mention in mentions:
-        if mention.platform_id != "facebook":
-            continue
-            
-        # Customize reply text here
-        reply_text = generate_custom_reply(mention)
-        
-        # Call Facebook API
-        try:
-            result = await reply_to_post(mention.id, reply_text)
-            
-            if result["success"]:
-                updates.append({
-                    "id": mention.id,
-                    "reply_id": result["data"]["id"]  # Assuming API returns the reply ID
-                })
-            else:
-                failed.append({
-                    "id": mention.id,
-                    "error": result.get("error", "Unknown error")
-                })
-        except Exception as e:
-            failed.append({
-                "id": mention.id,
-                "error": str(e)
-            })
-    
-    # Bulk update DB
-    await update_mentions_after_reply(db, updates)
-    
-    return {
-        "status": "done",
-        "replied": updates,
-        "failed": failed
-    }
-
 def generate_custom_reply(mention: MentionPost) -> str:
     """Generate a context-aware reply based on the post."""
     if "thank" in mention.text.lower():
@@ -169,7 +123,7 @@ def generate_custom_reply(mention: MentionPost) -> str:
         return "Glad you liked it! 😊"
     return "Thank you for your post!"
 
-async def reply_to_post(post_id: str, message: str):
+async def reply_to_post(db: AsyncSession, post_id: str, message: str):
     """Reply to a Facebook post or comment."""
     async with AsyncClient() as client:
         url = f"{GRAPH}/{post_id}"
@@ -182,6 +136,11 @@ async def reply_to_post(post_id: str, message: str):
             data = response.json()
             if "error" in data:
                 raise HTTPException(status_code=400, detail=data["error"]["message"])
+            
+            #db update
+            from app.services.db_services import update_mentions_after_reply
+            await update_mentions_after_reply(db, [{"id": post_id, "reply_id": data.get("id"), "message": message}])
+
             return {
                 "success": True,
                 "data": data

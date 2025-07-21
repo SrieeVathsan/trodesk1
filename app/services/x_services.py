@@ -3,7 +3,7 @@ import requests
 from requests_oauthlib import OAuth1
 
 from app.models.models import MentionPost, Platform
-from app.services.db_services import get_unreplied_mentions, store_mentions, update_mentions_after_reply
+from app.services.db_services import get_unreplied_mentions
 from app.utils.file_handling import read_last_id, save_last_id
 from app.core.config import X_USER_ID, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET, X_CONSUMER_KEY, X_CONSUMER_SECRET
 
@@ -47,10 +47,11 @@ async def fetch_mentions(db: AsyncSession):
     # Store
     data = tweets.get("data", [])
     if data:
+        from app.services.db_services import store_mentions
         await store_mentions(tweets, db, platform_id="x")
     return tweets
 
-def reply_to_tweet(tweet_id: str, text: str):
+async def reply_to_tweet(db: AsyncSession, tweet_id: str, text: str):
     payload = {
         "text": text,
         "reply": {
@@ -61,49 +62,22 @@ def reply_to_tweet(tweet_id: str, text: str):
     response = requests.post(REPLY_URL, auth=OAUTH, json=payload)
 
     if response.status_code == 201:
+        from app.services.db_services import update_mentions_after_reply
+        await update_mentions_after_reply(db, [{"id": tweet_id, "reply_id": response.json()["data"]["id"], "message": text}])
+
         return {
             "status": "success",
             "reply_id": response.json()["data"]["id"],
             "tweet_id": tweet_id
         }
+    
+    #db update
+
     return {
         "status": "error",
         "tweet_id": tweet_id,
         "error_code": response.status_code,
         "error_message": response.text
-    }
-
-async def process_unreplied_mentions(db: AsyncSession):
-    mentions = await get_unreplied_mentions(db)
-
-    if not mentions:
-        return {"status": "no_unreplied_tweets"}
-
-    updates = []
-    failed = []
-
-    for mention in mentions:
-        # 👇 Customize reply text here
-        reply_text = generate_custom_reply(mention)
-
-        # Call X API
-        result = reply_to_tweet(mention.id, f"@{mention.user.username} {reply_text}")
-
-        if result["status"] == "success":
-            updates.append({
-                "id": mention.id,
-                "reply_id": result["reply_id"]
-            })
-        else:
-            failed.append(result)
-
-    # Bulk update DB
-    await update_mentions_after_reply(db, updates)
-
-    return {
-        "status": "done",
-        "replied": updates,
-        "failed": failed
     }
 
 def generate_custom_reply(mention: MentionPost) -> str:

@@ -55,14 +55,14 @@ async def add_comment_to_post(
         raise HTTPException(status_code=400, detail=str(e))
 
 # Conversations endpoints
-@router.get("/conversations")
+@router.get("/linkedin/conversations")
 async def get_conversations(
     start: int = 0,
     count: int = 20
 ):
     try:
         conversations = await list_conversations(start, count)
-        return {"success": True, "conversations": conversations}
+        return {"data": conversations}  # Changed to match frontend expectation
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

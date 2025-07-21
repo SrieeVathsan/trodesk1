@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from app.core.config import IG_USER_ID,ACCESS_TOKEN,GRAPH,VERIFY_TOKEN
 import requests
 from app.models.models import MentionPost, Platform, User
-from app.services.db_services import get_unreplied_mentions, update_mentions_after_reply
+from app.services.db_services import get_unreplied_mentions
 
 
 
@@ -259,52 +259,6 @@ async def store_instagram_mentions(response: dict, db: AsyncSession, platform_id
     
     await db.commit()
 
-async def process_unreplied_ig_mentions(db: AsyncSession):
-    """Process and reply to unreplied Instagram mentions."""
-    mentions = await get_unreplied_mentions(db)
-    
-    if not mentions:
-        return {"status": "no_unreplied_mentions"}
-    
-    updates = []
-    failed = []
-    
-    for mention in mentions:
-        if mention.platform_id != "instagram":
-            continue
-            
-        # Customize reply text here
-        reply_text = generate_custom_reply(mention)
-        
-        # Call Instagram API
-        try:
-            result = await reply_to_mention(mention.id, reply_text)
-            
-            if result["success"]:
-                updates.append({
-                    "id": mention.id,
-                    "reply_id": result["data"]["id"]  # Assuming API returns the reply ID
-                })
-            else:
-                failed.append({
-                    "id": mention.id,
-                    "error": result.get("error", "Unknown error")
-                })
-        except Exception as e:
-            failed.append({
-                "id": mention.id,
-                "error": str(e)
-            })
-    
-    # Bulk update DB
-    await update_mentions_after_reply(db, updates)
-    
-    return {
-        "status": "done",
-        "replied": updates,
-        "failed": failed
-    }
-
 def generate_custom_reply(mention: MentionPost) -> str:
     """Generate a context-aware reply based on the post."""
     if "thank" in (mention.text or "").lower():
@@ -344,7 +298,7 @@ async def instagram_private_reply(comment_id: str, message: str):
 
 
 
-async def reply_to_mention(media_id: str, comment_text: str):
+async def reply_to_mention(db: AsyncSession, media_id: str, comment_text: str):
     """
     Reply to a post where your Instagram account is tagged/mentioned.
     Requires:
@@ -362,6 +316,15 @@ async def reply_to_mention(media_id: str, comment_text: str):
             data = resp.json()
             if "error" in data:
                 raise HTTPException(status_code=400, detail=data["error"]["message"])
+            
+            # Update the mention in the database
+            from app.services.db_services import update_mentions_after_reply
+            await update_mentions_after_reply(db, [{
+                "id": media_id,
+                "reply_id": data.get("id"),
+                "message": comment_text
+            }])
+
             return {
                 "success": True,
                 "message": f"Replied to mention (ID: {media_id})",
