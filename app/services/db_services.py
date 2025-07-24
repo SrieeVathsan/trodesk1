@@ -4,15 +4,22 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from datetime import datetime
 from app.models.models import Platform, User, MentionPost
+from app.core.logger import app_logger as logger
 
 
 async def get_unreplied_mentions(db: AsyncSession) -> List[MentionPost]:
-    result = await db.execute(
-        select(MentionPost)
-        .options(selectinload(MentionPost.user))  # eagerly load user relationship
-        .where(MentionPost.is_reply == False)
-    )
-    return result.scalars().all()
+    try:
+        result = await db.execute(
+            select(MentionPost)
+            .where(MentionPost.is_reply == False)
+        )
+        mentions = result.scalars().all()
+        
+        return mentions
+    except Exception as e:
+        logger.error(f"Error in get_unreplied_mentions: {e}")
+        # Return empty list if there's an error
+        return []
 
 async def update_mentions_after_reply(db: AsyncSession, updates: List[dict]):
     """
