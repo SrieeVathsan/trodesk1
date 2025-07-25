@@ -115,14 +115,6 @@ async def store_facebook_mentions(response: dict, db: AsyncSession, platform_id:
     
     await db.commit()
 
-def generate_custom_reply(mention: MentionPost) -> str:
-    """Generate a context-aware reply based on the post."""
-    if "thank" in mention.text.lower():
-        return "You're most welcome! 🙌"
-    elif "great" in mention.text.lower():
-        return "Glad you liked it! 😊"
-    return "Thank you for your post!"
-
 async def reply_to_post(db: AsyncSession, post_id: str, message: str):
     """Reply to a Facebook post or comment."""
     async with AsyncClient() as client:

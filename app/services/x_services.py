@@ -4,7 +4,6 @@ from requests_oauthlib import OAuth1
 
 from app.models.models import MentionPost, Platform
 from app.services.db_services import get_unreplied_mentions
-from app.utils.file_handling import read_last_id, save_last_id
 from app.core.config import X_USER_ID, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET, X_CONSUMER_KEY, X_CONSUMER_SECRET
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,7 +18,7 @@ OAUTH = OAuth1(X_CONSUMER_KEY, X_CONSUMER_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN
 
 async def fetch_mentions(db: AsyncSession):
     """Fetch mentions from X (Twitter) API."""
-    since_id = await read_last_id()
+    
 
     params = {
         "max_results": 100,
@@ -29,8 +28,7 @@ async def fetch_mentions(db: AsyncSession):
         "media.fields": "media_key,type,url,preview_image_url,duration_ms"
     }
 
-    if since_id:
-        params["since_id"] = since_id
+    
 
     response = requests.get(MENTIONS_URL, auth=OAUTH, params=params)
 
@@ -83,11 +81,3 @@ async def reply_to_tweet(db: AsyncSession, tweet_id: str, text: str):
         "error_code": response.status_code,
         "error_message": response.text
     }
-
-def generate_custom_reply(mention: MentionPost) -> str:
-    """Generate a context-aware reply based on the tweet."""
-    if "thank" in mention.text.lower():
-        return "You're most welcome! 🙌"
-    elif "great" in mention.text.lower():
-        return "Glad you liked it! 😊"
-    return "Thank you for mentioning me!"

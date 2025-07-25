@@ -48,21 +48,6 @@ async def handle_instagram_message(to_user_id: str, message_body: str, profile_n
     # Send response
     await send_instagram_message(to_user_id, response)
 
-    # Log conversation (assuming Conversation model exists)
-    # try:
-    #     async with db as session:
-    #         conversation = Conversation(
-    #             vendor_id=to_user_id,  # Using Instagram user ID as vendor_id
-    #             message=message_body,
-    #             direction="incoming",
-    #             created_at=datetime.now()
-    #         )
-    #         session.add(conversation)
-    #         await session.commit()
-    # except Exception as e:
-    #     logging.error(f"Error logging conversation: {e}")
-    #     await session.rollback()
-
 async def verify_instagram_webhook(request: Request):
     """Verify Instagram webhook subscription."""
     try:
@@ -258,14 +243,6 @@ async def store_instagram_mentions(response: dict, db: AsyncSession, platform_id
         db.add(mention)
     
     await db.commit()
-
-def generate_custom_reply(mention: MentionPost) -> str:
-    """Generate a context-aware reply based on the post."""
-    if "thank" in (mention.text or "").lower():
-        return "You're most welcome! 🙌"
-    elif "great" in (mention.text or "").lower():
-        return "Glad you liked it! 😊"
-    return "Thanks for mentioning us!"
 
 
 async def instagram_conversations():

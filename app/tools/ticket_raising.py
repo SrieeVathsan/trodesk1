@@ -1,7 +1,6 @@
-from app.models.models import Platform, User, MentionPost, Ticket
-from sqlalchemy import select, func, case, desc
+from app.models.models import MentionPost, Ticket
+from sqlalchemy import select, case, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
 from app.core.logger import app_logger as logger
 
 

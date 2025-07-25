@@ -1,10 +1,9 @@
-from typing import Dict, List
+from typing import Dict
 from app.core.logger import app_logger as logger
 from app.models.models import MentionPost
 from app.services.facebook_service import reply_to_post
-from app.utils.agentic_ai import get_user_context
+from app.services.db_services import get_user_context
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 
 async def send_platform_response(db: AsyncSession, reply_data: Dict) -> Dict:
