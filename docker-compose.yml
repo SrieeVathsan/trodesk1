@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # FastAPI Application
+  social-media-api:
+    image: bhadri2919/trodesk:0.1
+    build:
+      context: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.dev
+    volumes:
+      - ./logs:/app/logs
+      - ./keyForMe.pem:/app/keyForMe.pem
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - social-media-network
+    restart: unless-stopped
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    env_file:
+      - .env.dev
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - social-media-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+volumes:
+  mysql_data:
+
+networks:
+  social-media-network:
+    driver: bridge
