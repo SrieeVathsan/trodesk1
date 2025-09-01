@@ -2,6 +2,7 @@ import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from app.react.react_agent import run_react_agent
 from app.api.v1.endpoints.instagram.insta_api import router as insta_router
 from app.api.v1.endpoints.facebook.facebook_api import router as facebook_router
 from app.api.v1.endpoints.x.x_api import router as x_router
@@ -20,7 +21,7 @@ async def lifespan(app: FastAPI):
     app.state.engine = engine
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-
+    await run_react_agent()
     yield
    
     # await task_manager.stop_background_tasks()
