@@ -5,18 +5,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.logger import app_logger
 
 
-router=APIRouter(tags="Insta-Webhook")
+router=APIRouter(tags=["Insta-Webhook"])
 
 @router.get("/insta/webhook")
-async def verify_webhook():
+async def verify_webhook(request: Request):
     try:
-        await verify_instagram_webhook(request=Request)
+        return await verify_instagram_webhook(request)
     except Exception as e:
         app_logger.info(f"Error while verifying webhook {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/insta/webhook")
-async def handling_webhook():
+async def handling_webhook(request: Request, background_tasks: BackgroundTasks):
     try:
-        await handle_instagram_webhook(request=Request,background_tasks=BackgroundTasks)
+        return await handle_instagram_webhook(request, background_tasks)
     except Exception as e:
-        app_logger.info(f"Error while handling instagram webhook")
+        app_logger.info(f"Error while handling instagram webhook: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+

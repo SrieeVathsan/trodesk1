@@ -1,3 +1,4 @@
+import json
 from fastapi import Request, BackgroundTasks, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -68,34 +69,31 @@ async def handle_instagram_webhook(request: Request, background_tasks: Backgroun
     """Handle incoming Instagram webhook events."""
     try:
         data = await request.json()
-        logging.info(f"Received Instagram webhook: {data}")
+        logging.info(f"Received Instagram webhook: {json.dumps(data, indent=2)}")
 
-        if data.get('object') == 'instagram':
-            for entry in data.get('entry', []):
-                for messaging_event in entry.get('messaging', []):
-                    sender = messaging_event.get('sender', {}).get('id')
-                    recipient = messaging_event.get('recipient', {}).get('id')
-                    message = messaging_event.get('message', {})
+        if data.get("object") == "instagram":
+            for entry in data.get("entry", []):
+                for event in entry.get("messaging", []):
+                    sender_id = event.get("sender", {}).get("id")
+                    message = event.get("message", {})
 
-                    if recipient != IG_USER_ID:
-                        continue  # Ignore messages not sent to our account
+                    if "text" in message:
+                        message_body = message["text"]
+                        profile_name = f"User_{sender_id}"
 
-                    if message.get('text'):
-                        message_body = message.get('text')
-                        profile_name = f"User_{sender}"  # Instagram webhooks don't provide profile name
                         background_tasks.add_task(
                             handle_instagram_message,
-                            sender,
+                            sender_id,
                             message_body,
                             profile_name,
-
                         )
+                        logging.info(f"Queued message from {sender_id}: {message_body}")
 
         return JSONResponse(content={"status": "success"})
+
     except Exception as e:
         logging.error(f"Error processing webhook: {e}")
         raise HTTPException(status_code=400, detail="Webhook processing failed")
-    
 
 
 

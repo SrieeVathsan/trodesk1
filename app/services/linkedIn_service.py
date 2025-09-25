@@ -108,11 +108,11 @@ async def create_conversation_and_send(recipient_urn: str, message_text: str):
         r.raise_for_status()
         return r.json()
 
-async def fetch_org_mentions(org_urn: str, start=0, count=20):
-    url = "https://api.linkedin.com/rest/organizationAgnosticMentions"
+async def fetch_org_mentions(start=0, count=20):
+    url = "https://api.linkedin.com/rest/posts"
     params = {
-        "q": "organization",
-        "organization": org_urn,
+        "q": "author",
+        "author": AUTHUR_URN,
         "start": start,
         "count": count
     }

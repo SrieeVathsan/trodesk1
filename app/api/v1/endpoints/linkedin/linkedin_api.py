@@ -69,5 +69,7 @@ async def get_conversations(
 
 
 @router.get("/org/mentions")
-async def api_org_mentions(AUTHUR_URN:str, start: int = 0, count: int = 20):
-    return await fetch_org_mentions(AUTHUR_URN, start, count)
+async def api_org_mentions(start: int = 0, count: int = 20):
+    return await fetch_org_mentions(start, count)
+
+

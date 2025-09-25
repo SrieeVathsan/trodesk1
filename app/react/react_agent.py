@@ -46,7 +46,7 @@ async def raise_ticket_tool(input_data: str = "") -> str:
 
 memory = MemorySaver()
 
-chat_model = init_chat_model("gpt-4o")
+chat_model = init_chat_model("gpt-4o-mini")
 
 tools = [fetch_mentions_tool, mark_sentiment_tool, send_reply_tool, raise_ticket_tool]
 agent = create_react_agent(model=chat_model, checkpointer=memory, tools=tools)

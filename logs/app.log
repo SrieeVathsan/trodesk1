@@ -5987,3 +5987,224 @@
 {"asctime": "2025-07-28 15:13:09,374", "levelname": "INFO", "name": "app", "message": "Database updated successfully for mention 1949767358425501717"}
 {"asctime": "2025-07-28 15:13:09,378", "levelname": "INFO", "name": "app", "message": "Verification: mention 1949767358425501717 is_reply=True, reply_message='Thank you for your feedback! We're constantly work...'"}
 {"asctime": "2025-07-28 15:13:09,378", "levelname": "INFO", "name": "app", "message": "\ud83d\udcac Sent reply to @BhadrinathanS on x: Thank you for your feedback! We're constantly working on improvements and appreciate your patience. ..."}
+{"asctime": "2025-08-08 12:28:48,453", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Friday, 25-Jul-25 05:00:00 PDT. The current time is Thursday, 07-Aug-25 23:58:47 PDT."}
+{"asctime": "2025-08-08 12:28:48,453", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Error validating access token: Session has expired on Friday, 25-Jul-25 05:00:00 PDT. The current time is Thursday, 07-Aug-25 23:58:47 PDT."}
+{"asctime": "2025-08-08 12:28:48,453", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-08-08 12:28:48,462", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-08-13 16:58:24,549", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Friday, 25-Jul-25 05:00:00 PDT. The current time is Wednesday, 13-Aug-25 04:28:24 PDT."}
+{"asctime": "2025-08-13 16:58:24,553", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Error validating access token: Session has expired on Friday, 25-Jul-25 05:00:00 PDT. The current time is Wednesday, 13-Aug-25 04:28:24 PDT."}
+{"asctime": "2025-08-13 16:58:24,553", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-08-13 16:58:24,560", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-08-13 17:57:22,878", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Friday, 25-Jul-25 05:00:00 PDT. The current time is Wednesday, 13-Aug-25 05:27:22 PDT."}
+{"asctime": "2025-08-13 17:57:22,878", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Error validating access token: Session has expired on Friday, 25-Jul-25 05:00:00 PDT. The current time is Wednesday, 13-Aug-25 05:27:22 PDT."}
+{"asctime": "2025-08-13 17:57:22,878", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-08-13 17:57:22,886", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-08-13 19:48:16,935", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Friday, 25-Jul-25 05:00:00 PDT. The current time is Wednesday, 13-Aug-25 07:18:16 PDT."}
+{"asctime": "2025-08-13 19:48:16,938", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Error validating access token: Session has expired on Friday, 25-Jul-25 05:00:00 PDT. The current time is Wednesday, 13-Aug-25 07:18:16 PDT."}
+{"asctime": "2025-08-13 19:48:16,938", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-08-13 19:48:16,940", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-08-13 19:50:22,448", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Friday, 25-Jul-25 05:00:00 PDT. The current time is Wednesday, 13-Aug-25 07:20:22 PDT."}
+{"asctime": "2025-08-13 19:50:22,448", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Error validating access token: Session has expired on Friday, 25-Jul-25 05:00:00 PDT. The current time is Wednesday, 13-Aug-25 07:20:22 PDT."}
+{"asctime": "2025-08-13 19:50:22,448", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-08-13 19:50:22,468", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-10 11:22:14,102", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Friday, 25-Jul-25 05:00:00 PDT. The current time is Tuesday, 09-Sep-25 22:52:13 PDT."}
+{"asctime": "2025-09-10 11:22:14,111", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Error validating access token: Session has expired on Friday, 25-Jul-25 05:00:00 PDT. The current time is Tuesday, 09-Sep-25 22:52:13 PDT."}
+{"asctime": "2025-09-10 11:22:14,113", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-10 11:22:14,128", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-10 11:22:27,968", "levelname": "INFO", "name": "app", "message": "Error fetching mentioned posts from instagram 500: Failed to fetch mentions: 400: Error validating access token: Session has expired on Friday, 25-Jul-25 05:00:00 PDT. The current time is Tuesday, 09-Sep-25 22:52:27 PDT."}
+{"asctime": "2025-09-10 11:23:21,231", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-10 11:23:21,233", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 500: Failed to fetch tags: "}
+{"asctime": "2025-09-10 11:23:21,235", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-10 11:23:21,241", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-10 11:27:55,023", "levelname": "INFO", "name": "app", "message": "Error fetching conversations from instagram"}
+{"asctime": "2025-09-10 11:31:31,816", "levelname": "INFO", "name": "app", "message": "Error fetching mentioned posts from instagram 500: Failed to fetch mentions: 400: Error validating access token: Session has expired on Tuesday, 09-Sep-25 23:00:00 PDT. The current time is Tuesday, 09-Sep-25 23:01:31 PDT."}
+{"asctime": "2025-09-10 11:32:18,138", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-10 11:32:18,138", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-10 11:32:18,138", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-10 11:32:18,146", "levelname": "INFO", "name": "app", "message": "Found 1 unreplied mentions"}
+{"asctime": "2025-09-10 11:32:20,069", "levelname": "INFO", "name": "app", "message": "Sentiment for MentionPost 17860306506481887 updated to positive"}
+{"asctime": "2025-09-10 11:32:20,838", "levelname": "WARNING", "name": "app", "message": "Platform reply failed for instagram: 500: Failed to reply: 400: Unsupported post request. Object with ID '17860306506481887' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https://developers.facebook.com/docs/graph-api"}
+{"asctime": "2025-09-10 11:32:20,838", "levelname": "INFO", "name": "app", "message": "Updating database for mention 17860306506481887: setting reply_message and is_reply=True"}
+{"asctime": "2025-09-10 11:32:20,855", "levelname": "INFO", "name": "app", "message": "Database updated successfully for mention 17860306506481887"}
+{"asctime": "2025-09-10 11:32:20,860", "levelname": "INFO", "name": "app", "message": "Verification: mention 17860306506481887 is_reply=True, reply_message='Thank you! We\u2019re glad you\u2019re excited about GenAI! ...'"}
+{"asctime": "2025-09-10 11:32:20,860", "levelname": "INFO", "name": "app", "message": "\ud83d\udcdd Database updated for mention 17860306506481887 but platform reply failed"}
+{"asctime": "2025-09-10 11:32:23,019", "levelname": "WARNING", "name": "app", "message": "Platform reply failed for instagram: 500: Failed to reply: 400: Unsupported post request. Object with ID '17860306506481887' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https://developers.facebook.com/docs/graph-api"}
+{"asctime": "2025-09-10 11:32:23,019", "levelname": "INFO", "name": "app", "message": "Updating database for mention 17860306506481887: setting reply_message and is_reply=True"}
+{"asctime": "2025-09-10 11:32:23,019", "levelname": "INFO", "name": "app", "message": "Database updated successfully for mention 17860306506481887"}
+{"asctime": "2025-09-10 11:32:23,029", "levelname": "INFO", "name": "app", "message": "Verification: mention 17860306506481887 is_reply=True, reply_message='Thank you! We\u2019re glad you\u2019re excited about GenAI! ...'"}
+{"asctime": "2025-09-10 11:32:23,029", "levelname": "INFO", "name": "app", "message": "\ud83d\udcdd Database updated for mention 17860306506481887 but platform reply failed"}
+{"asctime": "2025-09-10 11:33:08,381", "levelname": "INFO", "name": "app", "message": "Error replying the comments 500: Failed to reply: 400: Unsupported post request. Object with ID '17860306506481887' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https://developers.facebook.com/docs/graph-api"}
+{"asctime": "2025-09-11 11:30:09,336", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-11 11:30:09,348", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Unsupported get request. Object with ID '1087185422849137' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https://developers.facebook.com/docs/graph-api"}
+{"asctime": "2025-09-11 11:30:09,348", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-11 11:30:09,350", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-11 11:30:17,919", "levelname": "INFO", "name": "app", "message": "Error fetching mentioned posts from instagram 500: Failed to fetch mentions: 400: Unsupported get request. Object with ID '1087185422849137' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https://developers.facebook.com/docs/graph-api"}
+{"asctime": "2025-09-11 11:34:09,793", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-11 11:34:09,793", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-11 11:34:09,793", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-11 11:34:09,800", "levelname": "INFO", "name": "app", "message": "Found 1 unreplied mentions"}
+{"asctime": "2025-09-11 11:34:12,951", "levelname": "INFO", "name": "app", "message": "Sentiment for MentionPost 18060863987247552 updated to positive"}
+{"asctime": "2025-09-11 11:34:15,836", "levelname": "INFO", "name": "app", "message": "Updating database for mention 18060863987247552: setting reply_message and is_reply=True"}
+{"asctime": "2025-09-11 11:34:15,840", "levelname": "INFO", "name": "app", "message": "Database updated successfully for mention 18060863987247552"}
+{"asctime": "2025-09-11 11:34:15,846", "levelname": "INFO", "name": "app", "message": "Verification: mention 18060863987247552 is_reply=True, reply_message='Thank you so much! We're thrilled you think so! \ud83d\ude0a...'"}
+{"asctime": "2025-09-11 11:34:15,848", "levelname": "INFO", "name": "app", "message": "\ud83d\udcac Sent reply to @troudzai on instagram: Thank you so much! We're thrilled you think so! \ud83d\ude0a..."}
+{"asctime": "2025-09-11 11:38:19,940", "levelname": "INFO", "name": "app", "message": "Error replying the comments 500: Failed to reply: 400: Unsupported post request. Object with ID '18016801448767948' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https://developers.facebook.com/docs/graph-api"}
+{"asctime": "2025-09-11 11:55:09,403", "levelname": "INFO", "name": "app", "message": "Error replying the comments 500: Failed to reply: 400: Unsupported post request. Object with ID '18016801448767948' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https://developers.facebook.com/docs/graph-api"}
+{"asctime": "2025-09-11 14:00:31,850", "levelname": "INFO", "name": "app", "message": "Error fetching conversations from instagram"}
+{"asctime": "2025-09-11 14:04:41,396", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Thursday, 11-Sep-25 00:00:00 PDT. The current time is Thursday, 11-Sep-25 01:34:39 PDT."}
+{"asctime": "2025-09-11 14:04:41,397", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-11 14:04:41,399", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-11 14:04:41,404", "levelname": "INFO", "name": "app", "message": "Found 1 unreplied mentions"}
+{"asctime": "2025-09-11 14:04:44,578", "levelname": "INFO", "name": "app", "message": "Sentiment for MentionPost 18016801448767948 updated to positive"}
+{"asctime": "2025-09-11 14:04:45,474", "levelname": "WARNING", "name": "app", "message": "Platform reply failed for instagram: 500: Failed to reply: 400: Unsupported post request. Object with ID '18016801448767948' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https://developers.facebook.com/docs/graph-api"}
+{"asctime": "2025-09-11 14:04:45,474", "levelname": "INFO", "name": "app", "message": "Updating database for mention 18016801448767948: setting reply_message and is_reply=True"}
+{"asctime": "2025-09-11 14:04:45,497", "levelname": "INFO", "name": "app", "message": "Database updated successfully for mention 18016801448767948"}
+{"asctime": "2025-09-11 14:04:45,499", "levelname": "INFO", "name": "app", "message": "Verification: mention 18016801448767948 is_reply=True, reply_message='Thank you so much! We're glad you enjoy nature! \ud83c\udf3f\ud83d\ude0a...'"}
+{"asctime": "2025-09-11 14:04:45,499", "levelname": "INFO", "name": "app", "message": "\ud83d\udcdd Database updated for mention 18016801448767948 but platform reply failed"}
+{"asctime": "2025-09-11 14:04:49,043", "levelname": "WARNING", "name": "app", "message": "Platform reply failed for instagram: 500: Failed to reply: 400: Unsupported post request. Object with ID '18016801448767948' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https://developers.facebook.com/docs/graph-api"}
+{"asctime": "2025-09-11 14:04:49,043", "levelname": "INFO", "name": "app", "message": "Updating database for mention 18016801448767948: setting reply_message and is_reply=True"}
+{"asctime": "2025-09-11 14:04:49,052", "levelname": "INFO", "name": "app", "message": "Database updated successfully for mention 18016801448767948"}
+{"asctime": "2025-09-11 14:04:49,056", "levelname": "INFO", "name": "app", "message": "Verification: mention 18016801448767948 is_reply=True, reply_message='Thank you for your mention! Unfortunately, it look...'"}
+{"asctime": "2025-09-11 14:04:49,059", "levelname": "INFO", "name": "app", "message": "\ud83d\udcdd Database updated for mention 18016801448767948 but platform reply failed"}
+{"asctime": "2025-09-11 14:05:04,506", "levelname": "INFO", "name": "app", "message": "Error fetching conversations from instagram"}
+{"asctime": "2025-09-17 13:25:06,218", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Thursday, 11-Sep-25 00:00:00 PDT. The current time is Wednesday, 17-Sep-25 00:55:05 PDT."}
+{"asctime": "2025-09-17 13:25:06,228", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-17 13:25:06,228", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-17 13:25:06,235", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-17 13:25:17,583", "levelname": "INFO", "name": "app", "message": "Error fetching conversations from instagram"}
+{"asctime": "2025-09-17 13:25:29,069", "levelname": "INFO", "name": "app", "message": "Error fetching mentioned posts from instagram 500: Failed to fetch mentions: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-19 23:50:30,195", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Thursday, 11-Sep-25 00:00:00 PDT. The current time is Friday, 19-Sep-25 11:20:28 PDT."}
+{"asctime": "2025-09-19 23:50:30,199", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-19 23:50:30,199", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-19 23:50:30,201", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-19 23:50:45,915", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Thursday, 11-Sep-25 00:00:00 PDT. The current time is Friday, 19-Sep-25 11:20:44 PDT."}
+{"asctime": "2025-09-19 23:50:45,915", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-19 23:50:45,924", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-19 23:50:45,938", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-19 23:50:57,727", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Thursday, 11-Sep-25 00:00:00 PDT. The current time is Friday, 19-Sep-25 11:20:56 PDT."}
+{"asctime": "2025-09-19 23:50:57,727", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-19 23:50:57,727", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-19 23:50:57,757", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-19 23:51:25,963", "levelname": "INFO", "name": "app", "message": "Error fetching conversations from instagram"}
+{"asctime": "2025-09-19 23:52:46,149", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Thursday, 11-Sep-25 00:00:00 PDT. The current time is Friday, 19-Sep-25 11:22:41 PDT."}
+{"asctime": "2025-09-19 23:52:46,149", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-19 23:52:46,157", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-19 23:52:46,159", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-19 23:52:50,568", "levelname": "INFO", "name": "app", "message": "Error fetching conversations from instagram"}
+{"asctime": "2025-09-19 23:53:31,144", "levelname": "INFO", "name": "app", "message": "Error replying the comments 500: Failed to reply: 400: Unsupported post request. Object with ID '18016801448767948' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https://developers.facebook.com/docs/graph-api"}
+{"asctime": "2025-09-19 23:55:07,359", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Thursday, 11-Sep-25 00:00:00 PDT. The current time is Friday, 19-Sep-25 11:25:06 PDT."}
+{"asctime": "2025-09-19 23:55:07,359", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-19 23:55:07,359", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-19 23:55:07,377", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-19 23:55:33,063", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Thursday, 11-Sep-25 00:00:00 PDT. The current time is Friday, 19-Sep-25 11:25:30 PDT."}
+{"asctime": "2025-09-19 23:55:33,063", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-19 23:55:33,064", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-19 23:55:33,066", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-20 13:34:33,139", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Thursday, 11-Sep-25 00:00:00 PDT. The current time is Saturday, 20-Sep-25 01:04:30 PDT."}
+{"asctime": "2025-09-20 13:34:33,140", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-20 13:34:33,140", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-20 13:34:33,143", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-20 13:40:57,363", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Thursday, 11-Sep-25 00:00:00 PDT. The current time is Saturday, 20-Sep-25 01:10:55 PDT."}
+{"asctime": "2025-09-20 13:40:57,363", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-20 13:40:57,363", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-20 13:40:57,378", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-20 13:41:30,226", "levelname": "INFO", "name": "app", "message": "Error while verifying webhook 400: Verification error: 403: Verification failed"}
+{"asctime": "2025-09-20 13:44:16,948", "levelname": "INFO", "name": "app", "message": "Error while verifying webhook 400: Verification error: 403: Verification failed"}
+{"asctime": "2025-09-20 13:49:18,944", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Thursday, 11-Sep-25 00:00:00 PDT. The current time is Saturday, 20-Sep-25 01:19:16 PDT."}
+{"asctime": "2025-09-20 13:49:18,944", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-20 13:49:18,944", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-20 13:49:18,955", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-20 13:49:37,759", "levelname": "INFO", "name": "app", "message": "Error while verifying webhook 400: Verification error: 403: Verification failed"}
+{"asctime": "2025-09-20 13:52:00,574", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Thursday, 11-Sep-25 00:00:00 PDT. The current time is Saturday, 20-Sep-25 01:21:58 PDT."}
+{"asctime": "2025-09-20 13:52:00,574", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-20 13:52:00,574", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-20 13:52:00,593", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-20 13:58:20,967", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-20 13:58:20,979", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 500: Failed to fetch tags: 400: An unknown error has occurred."}
+{"asctime": "2025-09-20 13:58:20,981", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-20 13:58:20,986", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-20 14:00:10,384", "levelname": "INFO", "name": "app", "message": "Error fetching mentioned posts from instagram 500: Failed to fetch mentions: 500: Failed to fetch tags: 400: An unknown error has occurred."}
+{"asctime": "2025-09-20 14:17:06,392", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-20 14:17:06,392", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 500: Failed to fetch tags: 400: An unknown error has occurred."}
+{"asctime": "2025-09-20 14:17:06,392", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-20 14:17:06,409", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-20 15:19:17,505", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Thursday, 11-Sep-25 00:00:00 PDT. The current time is Saturday, 20-Sep-25 02:49:15 PDT."}
+{"asctime": "2025-09-20 15:19:17,506", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-20 15:19:17,507", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-20 15:19:17,511", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-20 15:19:42,881", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-20 15:19:42,881", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 500: Failed to fetch tags: 400: An unknown error has occurred."}
+{"asctime": "2025-09-20 15:19:42,883", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-20 15:19:42,899", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-20 15:53:18,162", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-20 15:53:18,162", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 500: Failed to fetch tags: 400: An unknown error has occurred."}
+{"asctime": "2025-09-20 15:53:18,162", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-20 15:53:18,162", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-20 16:51:22,816", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-20 16:51:22,818", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Invalid OAuth access token - Cannot parse access token"}
+{"asctime": "2025-09-20 16:51:22,820", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-20 16:51:22,822", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-20 16:51:46,462", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Thursday, 11-Sep-25 00:00:00 PDT. The current time is Saturday, 20-Sep-25 04:21:42 PDT."}
+{"asctime": "2025-09-20 16:51:46,462", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-20 16:51:46,462", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-20 16:51:46,473", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-20 16:59:23,789", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: Session has expired on Thursday, 11-Sep-25 00:00:00 PDT. The current time is Saturday, 20-Sep-25 04:29:18 PDT."}
+{"asctime": "2025-09-20 16:59:23,790", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-20 16:59:23,791", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-20 16:59:23,794", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-20 17:00:02,052", "levelname": "INFO", "name": "app", "message": "Error fetching conversations from instagram"}
+{"asctime": "2025-09-22 20:40:19,659", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-22 20:40:19,671", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-22 20:40:19,671", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-22 20:40:19,676", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-22 20:40:56,352", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-22 20:40:56,352", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-22 20:40:56,357", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-22 20:40:56,363", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-22 21:23:21,113", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-22 21:23:21,114", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-22 21:23:21,114", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-22 21:23:21,120", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-22 21:46:51,073", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-22 21:46:51,073", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-22 21:46:51,075", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-22 21:46:51,082", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-22 21:53:31,025", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-22 21:53:31,025", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-22 21:53:31,025", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-22 21:53:31,032", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-24 18:03:36,015", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: The session was invalidated previously using an API call."}
+{"asctime": "2025-09-24 18:03:36,018", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Error validating access token: The session was invalidated previously using an API call."}
+{"asctime": "2025-09-24 18:03:36,018", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-24 18:03:36,020", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-24 18:04:41,109", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-24 18:04:41,110", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Error validating access token: The session was invalidated previously using an API call."}
+{"asctime": "2025-09-24 18:04:41,110", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-24 18:04:41,115", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-24 18:04:56,637", "levelname": "INFO", "name": "app", "message": "Error fetching mentioned posts from instagram 500: Failed to fetch mentions: 400: Error validating access token: The session was invalidated previously using an API call."}
+{"asctime": "2025-09-24 18:05:37,363", "levelname": "INFO", "name": "app", "message": "Error fetching mentioned posts from instagram 500: Failed to fetch mentions: 400: Error validating access token: The session was invalidated previously using an API call."}
+{"asctime": "2025-09-24 18:07:54,068", "levelname": "INFO", "name": "app", "message": "Error fetching mentioned posts from instagram 500: Failed to fetch mentions: 400: Error validating access token: The session was invalidated previously using an API call."}
+{"asctime": "2025-09-24 19:17:46,080", "levelname": "INFO", "name": "app", "message": "Error while fetching mentions from facebook 500: 400: Error validating access token: The session was invalidated previously using an API call."}
+{"asctime": "2025-09-24 19:17:46,080", "levelname": "INFO", "name": "app", "message": "Error fetching mentioned posts from instagram 500: Failed to fetch mentions: 400: Error validating access token: The session was invalidated previously using an API call."}
+{"asctime": "2025-09-24 19:18:44,856", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-24 19:18:44,857", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-24 19:18:44,857", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-24 19:18:44,859", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-25 11:02:03,813", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-25 11:02:03,823", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-25 11:02:03,823", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-25 11:02:03,827", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-25 11:10:41,773", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-25 11:10:41,777", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-25 11:10:41,777", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-25 11:10:41,785", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-25 11:11:13,260", "levelname": "INFO", "name": "app", "message": "Facebook auth payload received for user_id=122100965264950069"}
+{"asctime": "2025-09-25 11:38:40,227", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-25 11:38:40,227", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-25 11:38:40,227", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-25 11:38:40,233", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-25 11:38:59,526", "levelname": "INFO", "name": "app", "message": "Facebook auth payload received for user_id=122100965264950069"}
+{"asctime": "2025-09-25 11:57:31,039", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-25 11:57:31,039", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-25 11:57:31,039", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-25 11:57:31,047", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
