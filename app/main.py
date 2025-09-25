@@ -2,6 +2,7 @@ import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from app.react.react_agent import run_react_agent
 from app.api.v1.endpoints.instagram.insta_api import router as insta_router
 from app.api.v1.endpoints.instagram.insta_webhook import router as insta_webhook_router
 from app.api.v1.endpoints.facebook.facebook_api import router as facebook_router
