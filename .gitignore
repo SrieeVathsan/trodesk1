@@ -1,8 +1,20 @@
+# Env files
 .env
-.env.dev
-.env.prod
-.env.uat
-social-env/
+.env.*
+
+# Virtualenvs and temp envs
 env/
-__pycache__
-keyForMe.pem
+social-env/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Private keys
+*.pem
+
+# Node
+node_modules/
+
+# Logs
+*.log
