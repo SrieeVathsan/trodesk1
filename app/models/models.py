@@ -43,3 +43,18 @@ class MentionPost(Base):
 
     platform = relationship("Platform", back_populates="posts")
     user = relationship("User", back_populates="posts")
+
+class Ticket(Base):
+    __tablename__ = "tickets"
+
+    id = Column(String(100), primary_key=True) 
+    user_id = Column(String(100), ForeignKey("users.id"))
+    mention_post_id = Column(String(100), ForeignKey("mention_posts.id"))
+    platform_id = Column(String(36), ForeignKey("platforms.id"))
+    priority= Column(String(20), default="medium")  # e.g. "low", "medium", "high"
+    created_at = Column(DateTime)
+    resolved_at = Column(DateTime, nullable=True)
+    status = Column(VARCHAR(20), default="open")  # e.g. "open", "closed", "in_progress"
+
+    user = relationship("User")
+    mention_post = relationship("MentionPost")

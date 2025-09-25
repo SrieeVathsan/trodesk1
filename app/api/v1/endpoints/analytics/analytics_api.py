@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
-from app.services.analytics_service import (
+from app.services.db_services import (
     get_sentiment_counts,
     get_ticket_stats,
     resolve_ticket

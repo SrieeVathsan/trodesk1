@@ -1,3 +1,4 @@
+import json
 from fastapi import Request, BackgroundTasks, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,8 +10,7 @@ from dotenv import load_dotenv
 from app.core.config import IG_USER_ID,ACCESS_TOKEN,GRAPH,VERIFY_TOKEN
 import requests
 from app.models.models import MentionPost, Platform, User
-from app.services.db_services import get_unreplied_mentions, update_mentions_after_reply
-from app.utils.llm_call import llm_call
+from app.services.db_services import get_unreplied_mentions
 
 
 
@@ -49,21 +49,6 @@ async def handle_instagram_message(to_user_id: str, message_body: str, profile_n
     # Send response
     await send_instagram_message(to_user_id, response)
 
-    # Log conversation (assuming Conversation model exists)
-    # try:
-    #     async with db as session:
-    #         conversation = Conversation(
-    #             vendor_id=to_user_id,  # Using Instagram user ID as vendor_id
-    #             message=message_body,
-    #             direction="incoming",
-    #             created_at=datetime.now()
-    #         )
-    #         session.add(conversation)
-    #         await session.commit()
-    # except Exception as e:
-    #     logging.error(f"Error logging conversation: {e}")
-    #     await session.rollback()
-
 async def verify_instagram_webhook(request: Request):
     """Verify Instagram webhook subscription."""
     try:
@@ -84,34 +69,31 @@ async def handle_instagram_webhook(request: Request, background_tasks: Backgroun
     """Handle incoming Instagram webhook events."""
     try:
         data = await request.json()
-        logging.info(f"Received Instagram webhook: {data}")
+        logging.info(f"Received Instagram webhook: {json.dumps(data, indent=2)}")
 
-        if data.get('object') == 'instagram':
-            for entry in data.get('entry', []):
-                for messaging_event in entry.get('messaging', []):
-                    sender = messaging_event.get('sender', {}).get('id')
-                    recipient = messaging_event.get('recipient', {}).get('id')
-                    message = messaging_event.get('message', {})
+        if data.get("object") == "instagram":
+            for entry in data.get("entry", []):
+                for event in entry.get("messaging", []):
+                    sender_id = event.get("sender", {}).get("id")
+                    message = event.get("message", {})
 
-                    if recipient != IG_USER_ID:
-                        continue  # Ignore messages not sent to our account
+                    if "text" in message:
+                        message_body = message["text"]
+                        profile_name = f"User_{sender_id}"
 
-                    if message.get('text'):
-                        message_body = message.get('text')
-                        profile_name = f"User_{sender}"  # Instagram webhooks don't provide profile name
                         background_tasks.add_task(
                             handle_instagram_message,
-                            sender,
+                            sender_id,
                             message_body,
                             profile_name,
-
                         )
+                        logging.info(f"Queued message from {sender_id}: {message_body}")
 
         return JSONResponse(content={"status": "success"})
+
     except Exception as e:
         logging.error(f"Error processing webhook: {e}")
         raise HTTPException(status_code=400, detail="Webhook processing failed")
-    
 
 
 
@@ -260,61 +242,6 @@ async def store_instagram_mentions(response: dict, db: AsyncSession, platform_id
     
     await db.commit()
 
-async def process_unreplied_ig_mentions(db: AsyncSession):
-    """Process and reply to unreplied Instagram mentions."""
-    mentions = await get_unreplied_mentions(db)
-    
-    if not mentions:
-        return {"status": "no_unreplied_mentions"}
-    
-    updates = []
-    failed = []
-    
-    for mention in mentions:
-        if mention.platform_id != "instagram":
-            continue
-            
-        # Customize reply text here
-        reply_text = await llm_call(mention.text)
-
-        # Call Instagram API
-        try:
-            result = await reply_to_mention(db, mention.id, reply_text)
-            
-            if result["success"]:
-                updates.append({
-                    "id": mention.id,
-                    "reply_id": result["data"]["id"],  # Assuming API returns the reply ID
-                    "message": reply_text  
-                })
-            else:
-                failed.append({
-                    "id": mention.id,
-                    "error": result.get("error", "Unknown error")
-                })
-        except Exception as e:
-            failed.append({
-                "id": mention.id,
-                "error": str(e)
-            })
-    
-    # Bulk update DB
-    # await update_mentions_after_reply(db, updates)
-    
-    return {
-        "status": "done",
-        "replied": updates,
-        "failed": failed
-    }
-
-def generate_custom_reply(mention: MentionPost) -> str:
-    """Generate a context-aware reply based on the post."""
-    if "thank" in (mention.text or "").lower():
-        return "You're most welcome! 🙌"
-    elif "great" in (mention.text or "").lower():
-        return "Glad you liked it! 😊"
-    return "Thanks for mentioning us!"
-
 
 async def instagram_conversations():
     url = f"{GRAPH}/{IG_USER_ID}/conversations"
@@ -366,6 +293,7 @@ async def reply_to_mention(db: AsyncSession, media_id: str, comment_text: str):
                 raise HTTPException(status_code=400, detail=data["error"]["message"])
             
             # Update the mention in the database
+            from app.services.db_services import update_mentions_after_reply
             await update_mentions_after_reply(db, [{
                 "id": media_id,
                 "reply_id": data.get("id"),

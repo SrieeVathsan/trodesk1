@@ -1,4 +1,5 @@
 from typing import List, Optional
+from pydantic import BaseModel
 from app.core.config import GRAPH,FB_PAGE_ID,PAGE_ACCESS_TOKEN
 from fastapi import Depends, File, HTTPException,APIRouter, UploadFile
 from httpx import AsyncClient
@@ -9,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.facebook_service import reply_to_post
 
 router=APIRouter(tags=["Facebook"])
+
+
 
 class FacebookAuthPayload(BaseModel):
     access_token: str
@@ -41,17 +44,17 @@ async def facebook_auth(payload: FacebookAuthPayload, db: AsyncSession = Depends
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
 @router.post("/facebook/posts/text")
 async def create_facebook_text_post(
     message: str,
+    access_token: Optional[str] = None,
     db: AsyncSession = Depends(get_db)
 ):
     """
     Create a Facebook Page post with only text.
     """
     try:
-        return await create_fb_text_post(db, message)
+        return await create_fb_text_post(db, message, access_token=access_token)
     except HTTPException:
         raise
     except Exception as e:
@@ -63,6 +66,7 @@ async def create_facebook_photo_post(
     message: str,
     photo_urls: Optional[List[str]] = None,
     image_files: Optional[List[UploadFile]] = File(None),
+    access_token: Optional[str] = None,
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -82,7 +86,8 @@ async def create_facebook_photo_post(
             message=message,
             photo_urls=photo_urls or [],
             image_files=image_bytes,
-            image_filenames=image_filenames
+            image_filenames=image_filenames,
+            access_token=access_token
         )
     except HTTPException:
         raise
@@ -91,33 +96,33 @@ async def create_facebook_photo_post(
 
 
 @router.get("/facebook/posts")
-async def get_facebook_posts(db:AsyncSession=Depends(get_db)):
+async def get_facebook_posts(access_token: Optional[str] = None, db:AsyncSession=Depends(get_db)):
     try:
-        return await get_fb_posts(db=db)
+        return await get_fb_posts(db=db, access_token=access_token)
     except Exception as e:
         app_logger.info(f"Error while fetching facebook posts {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/facebook/mentions")
-async def get_facebook_mentions(db:AsyncSession=Depends(get_db)):
+async def get_facebook_mentions(access_token: Optional[str] = None, db:AsyncSession=Depends(get_db)):
     try:
-        return await get_fb_mentions(db=db) 
+        return await get_fb_mentions(db=db, access_token=access_token) 
     except Exception as e:
         app_logger.info(f"Error while fetching mentions from facebook {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/facebook/reply")
-async def reply_to_facebook_post(post_id: str, message: str, db: AsyncSession = Depends(get_db)):
+async def reply_to_facebook_post(post_id: str, message: str, access_token: Optional[str] = None, db: AsyncSession = Depends(get_db)):
     try:
-        return await reply_to_post(db, post_id, message)  
+        return await reply_to_post(db, post_id, message, access_token=access_token)  
     except Exception as e:
         app_logger.info(f"Error sending reply to the user in facebook")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/facebook/sent_private")
-async def reply_in_dm(post_id: str, message: str):
+async def reply_in_dm(post_id: str, message: str, access_token: Optional[str] = None):
     try:
-        return await reply_in_private(post_id, message)  
+        return await reply_in_private(post_id, message, access_token=access_token)  
     except Exception as e:
         app_logger.info(f"Error sending reply to the user in facebook")
         raise HTTPException(status_code=500, detail=str(e))

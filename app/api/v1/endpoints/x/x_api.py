@@ -3,7 +3,10 @@ from app.db.session import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.models import Platform
 from app.services.db_services import store_mentions
-from app.services.x_services import fetch_mentions, process_unreplied_mentions, reply_to_tweet
+from app.services.x_services import fetch_mentions
+from app.services.x_services import reply_to_tweet
+from app.core.logger import app_logger
+
 
 router = APIRouter(tags=["X"])
 
