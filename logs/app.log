@@ -6208,3 +6208,62 @@
 {"asctime": "2025-09-25 11:57:31,039", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
 {"asctime": "2025-09-25 11:57:31,039", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
 {"asctime": "2025-09-25 11:57:31,047", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-29 11:54:13,086", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 123 not found"}
+{"asctime": "2025-09-29 11:54:13,111", "levelname": "INFO", "name": "app", "message": "No tickets to raise"}
+{"asctime": "2025-09-29 11:54:13,159", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 456 not found"}
+{"asctime": "2025-09-29 11:54:13,213", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 789 not found"}
+{"asctime": "2025-09-29 11:54:16,039", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: This transaction is closed"}
+{"asctime": "2025-09-29 11:54:16,039", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 500: Failed to fetch tags: (raised as a result of Query-invoked autoflush; consider using a session.no_autoflush block if this flush is occurring prematurely)\n(pymysql.err.IntegrityError) (1062, \"Duplicate entry 'facebook' for key 'platforms.PRIMARY'\")\n[SQL: INSERT INTO platforms (id, name) VALUES (%s, %s)]\n[parameters: ('facebook', 'Facebook')]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)"}
+{"asctime": "2025-09-29 11:54:16,039", "levelname": "ERROR", "name": "app", "message": "Error fetching X mentions: Method 'commit()' can't be called here; method '_prepare_impl()' is already in progress and this would cause an unexpected state change to <SessionTransactionState.CLOSED: 5> (Background on this error at: https://sqlalche.me/e/20/isce)"}
+{"asctime": "2025-09-29 11:54:16,041", "levelname": "ERROR", "name": "app", "message": "Error in get_unreplied_mentions: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (raised as a result of Query-invoked autoflush; consider using a session.no_autoflush block if this flush is occurring prematurely)\n(pymysql.err.IntegrityError) (1062, \"Duplicate entry 'facebook' for key 'platforms.PRIMARY'\")\n[SQL: INSERT INTO platforms (id, name) VALUES (%s, %s)]\n[parameters: ('facebook', 'Facebook')]\n(Background on this error at: https://sqlalche.me/e/20/gkpj) (Background on this error at: https://sqlalche.me/e/20/7s2a)"}
+{"asctime": "2025-09-29 11:54:16,042", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-09-29 12:08:21,012", "levelname": "INFO", "name": "app", "message": "No tickets to raise"}
+{"asctime": "2025-09-29 12:08:21,450", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 123 not found"}
+{"asctime": "2025-09-29 12:08:21,514", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 456 not found"}
+{"asctime": "2025-09-29 12:08:21,578", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 789 not found"}
+{"asctime": "2025-09-29 12:08:22,899", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-29 12:08:22,899", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-29 12:08:22,899", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-29 12:08:22,946", "levelname": "INFO", "name": "app", "message": "Found 12 unreplied mentions"}
+{"asctime": "2025-09-29 12:18:20,036", "levelname": "INFO", "name": "app", "message": "Error while fetching mentions from facebook 500: 400: Invalid JSON for postcard"}
+{"asctime": "2025-09-29 12:18:22,155", "levelname": "INFO", "name": "app", "message": "Error while fetching mentions from facebook 500: 400: Invalid JSON for postcard"}
+{"asctime": "2025-09-29 12:18:35,682", "levelname": "INFO", "name": "app", "message": "Error while fetching mentions from facebook 500: 400: Invalid JSON for postcard"}
+{"asctime": "2025-09-29 12:18:56,755", "levelname": "INFO", "name": "app", "message": "Error while fetching mentions from facebook 500: 400: Invalid JSON for postcard"}
+{"asctime": "2025-09-29 12:21:17,866", "levelname": "INFO", "name": "app", "message": "Error while fetching mentions from facebook 500: 400: Invalid JSON for postcard"}
+{"asctime": "2025-09-29 12:28:52,617", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 123 not found"}
+{"asctime": "2025-09-29 12:28:52,725", "levelname": "INFO", "name": "app", "message": "No tickets to raise"}
+{"asctime": "2025-09-29 12:28:52,793", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 456 not found"}
+{"asctime": "2025-09-29 12:28:52,854", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 789 not found"}
+{"asctime": "2025-09-29 12:28:55,256", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-29 12:28:55,256", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-29 12:28:55,256", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-29 12:28:55,326", "levelname": "INFO", "name": "app", "message": "Found 16 unreplied mentions"}
+{"asctime": "2025-09-29 12:46:33,150", "levelname": "INFO", "name": "app", "message": "Error while fetching mentions from facebook 500: 400: Invalid JSON for postcard"}
+{"asctime": "2025-09-29 14:10:57,530", "levelname": "INFO", "name": "app", "message": "No tickets to raise"}
+{"asctime": "2025-09-29 14:10:57,830", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 123 not found"}
+{"asctime": "2025-09-29 14:10:57,893", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 456 not found"}
+{"asctime": "2025-09-29 14:10:57,957", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 789 not found"}
+{"asctime": "2025-09-29 14:10:59,933", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-29 14:10:59,933", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-29 14:10:59,938", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-29 14:10:59,997", "levelname": "INFO", "name": "app", "message": "Found 16 unreplied mentions"}
+{"asctime": "2025-09-29 14:12:04,933", "levelname": "INFO", "name": "app", "message": "Error while fetching mentions from facebook 500: 400: Invalid JSON for postcard"}
+{"asctime": "2025-09-29 14:12:27,416", "levelname": "INFO", "name": "app", "message": "Error while fetching mentions from facebook 500: 400: Invalid JSON for postcard"}
+{"asctime": "2025-09-29 14:57:56,916", "levelname": "INFO", "name": "app", "message": "Error replying the comments 500: Failed to reply: 400: Unsupported post request. Object with ID '466873' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https://developers.facebook.com/docs/graph-api"}
+{"asctime": "2025-09-29 14:58:19,687", "levelname": "INFO", "name": "app", "message": "Error replying the comments 500: Failed to reply: 400: Unsupported post request. Object with ID '466873' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https://developers.facebook.com/docs/graph-api"}
+{"asctime": "2025-09-30 15:44:56,101", "levelname": "INFO", "name": "app", "message": "No tickets to raise"}
+{"asctime": "2025-09-30 15:44:56,116", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 123 not found"}
+{"asctime": "2025-09-30 15:44:56,166", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 456 not found"}
+{"asctime": "2025-09-30 15:44:56,216", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 789 not found"}
+{"asctime": "2025-09-30 15:44:59,289", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-30 15:44:59,296", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-30 15:44:59,296", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-30 15:44:59,357", "levelname": "INFO", "name": "app", "message": "Found 16 unreplied mentions"}
+{"asctime": "2025-09-30 16:07:25,147", "levelname": "INFO", "name": "app", "message": "No tickets to raise"}
+{"asctime": "2025-09-30 16:07:25,187", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 123 not found"}
+{"asctime": "2025-09-30 16:07:25,240", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 456 not found"}
+{"asctime": "2025-09-30 16:07:25,288", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 789 not found"}
+{"asctime": "2025-09-30 16:07:26,888", "levelname": "INFO", "name": "app", "message": "Successfully fetched Facebook mentions"}
+{"asctime": "2025-09-30 16:07:26,888", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
+{"asctime": "2025-09-30 16:07:26,894", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-09-30 16:07:26,959", "levelname": "INFO", "name": "app", "message": "Found 16 unreplied mentions"}

@@ -11,6 +11,10 @@ from langchain.tools import tool
 from app.db.session import async_session
 import os
 from app.core.config import GROQ_API_KEY
+from app.core.config import get_settings
+from langchain_groq import ChatGroq
+
+settings = get_settings()
 
 
 @tool
@@ -42,11 +46,12 @@ async def raise_ticket_tool(input_data: str = "") -> str:
         result = await raise_the_ticket(db)
         return json.dumps(result)
 
-
+api_key = settings.GROQ_API_KEY
+chat_model=ChatGroq(api_key=api_key, model="llama-3.1-8b-instant", temperature=0)
 
 memory = MemorySaver()
 
-chat_model = init_chat_model("gpt-4o-mini")
+# chat_model = init_chat_model("gpt-4o-mini")
 
 tools = [fetch_mentions_tool, mark_sentiment_tool, send_reply_tool, raise_ticket_tool]
 agent = create_react_agent(model=chat_model, checkpointer=memory, tools=tools)

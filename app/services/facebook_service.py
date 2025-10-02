@@ -7,34 +7,16 @@ from app.models.models import Platform, User, MentionPost
 from app.services.db_services import get_unreplied_mentions
 from typing import List, Optional
 
-async def create_fb_text_post(db: AsyncSession, message: str, access_token: str | None = None):
-    """
-    Create a text-only Facebook Page post.
-    """
-    token = access_token or PAGE_ACCESS_TOKEN
-    async with AsyncClient() as client:
-        url = f"{GRAPH}/{FB_PAGE_ID}/feed"
-        params = {
-            "message": message,
-            "access_token": token
-        }
-        resp = await client.post(url, params=params)
-        data = resp.json()
-        if "error" in data:
-            raise HTTPException(status_code=400, detail=data["error"]["message"])
-        return {"success": True, "post_id": data.get("id"), "data": data}
-
-
-async def create_fb_photo_post(
+async def create_fb_post(
     db: AsyncSession,
     message: str,
     photo_urls: Optional[List[str]] = None,
     image_files: Optional[List[bytes]] = None,
     image_filenames: Optional[List[str]] = None,
-    access_token: str | None = None,
+    access_token: Optional[str] = None,
 ):
     """
-    Create a Facebook Page post with one or more photos.
+    Create a Facebook Page post (text-only or with photos).
     """
     if photo_urls is None:
         photo_urls = []
@@ -42,33 +24,28 @@ async def create_fb_photo_post(
         image_files = []
     if image_filenames is None:
         image_filenames = []
+
     if len(image_files) != len(image_filenames):
         raise ValueError("image_files and image_filenames length mismatch")
 
     token = access_token or PAGE_ACCESS_TOKEN
-    async with AsyncClient() as client:
-        # Case: one photo
-        if len(photo_urls) + len(image_files) == 1:
-            url = f"{GRAPH}/{FB_PAGE_ID}/photos"
-            params = {
-                "message": message,
-                "access_token": token
-            }
-            files = None
-            if photo_urls:
-                params["url"] = photo_urls[0]
-            else:
-                files = {"source": (image_filenames[0], image_files[0], "image/jpeg")}
 
-            resp = await client.post(url, params=params, files=files)
+    # Case 1: text-only post
+    if not photo_urls and not image_files:
+        async with AsyncClient() as client:
+            url = f"{GRAPH}/{FB_PAGE_ID}/feed"
+            params = {"message": message, "access_token": token}
+            resp = await client.post(url, params=params)
             data = resp.json()
             if "error" in data:
                 raise HTTPException(status_code=400, detail=data["error"]["message"])
-            return {"success": True, "photo_post_id": data.get("id"), "data": data}
+            return {"success": True, "post_id": data.get("id"), "data": data}
 
-        # Case: multiple photos → upload each unpublished + attach
+    # Case 2: one or multiple photos
+    async with AsyncClient() as client:
         photo_ids = []
-        # upload URL photos
+
+        # Upload photo URLs as unpublished
         for pu in photo_urls:
             up_url = f"{GRAPH}/{FB_PAGE_ID}/photos"
             params = {"access_token": token, "url": pu, "published": "false"}
@@ -78,7 +55,7 @@ async def create_fb_photo_post(
                 raise HTTPException(status_code=400, detail=f"Error uploading photo URL: {d['error']['message']}")
             photo_ids.append(d["id"])
 
-        # upload file photos
+        # Upload file photos as unpublished
         for img_bytes, fname in zip(image_files, image_filenames):
             up_url = f"{GRAPH}/{FB_PAGE_ID}/photos"
             params = {"access_token": token, "published": "false"}
@@ -89,12 +66,12 @@ async def create_fb_photo_post(
                 raise HTTPException(status_code=400, detail=f"Error uploading photo file: {d['error']['message']}")
             photo_ids.append(d["id"])
 
-        # attach to feed
+        # Publish the post attaching the photos
         feed_url = f"{GRAPH}/{FB_PAGE_ID}/feed"
         params = {
             "message": message,
             "access_token": token,
-            "attached_media": [{"media_fbid": pid} for pid in photo_ids]
+            "attached_media": [{"media_fbid": pid} for pid in photo_ids],
         }
         resp = await client.post(feed_url, json=params)
         data = resp.json()

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   MessageSquare,
   Home,
@@ -35,10 +35,31 @@ const App = () => {
   const [selectedPage, setSelectedPage] = useState("");
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [postContent, setPostContent] = useState("");
   const [fbUser, setFbUser] = useState(null);
   const [fbReady, setFbReady] = useState(false);
   const [fbStatus, setFbStatus] = useState("unknown");
+  const [saving, setSaving] = useState(false);
+  const [pages, setPages] = useState([]);
+  const messagesEndRef = useRef(null);
   const fbPollRef = useRef(0);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [selectedDm?.messages]);
+
+  // ✅ Clear reply text when switching mentions
+  useEffect(() => {
+    setReplyText("");
+  }, [selectedMessage]);
+
+  const platformLabels = {
+    Instagram: "Instagram User",
+    Facebook: "Facebook User",
+    X: "X (Twitter) User",
+  };
 
   const fbStatusMessage = () => {
     if (!fbReady) return "Facebook SDK not ready.";
@@ -52,6 +73,21 @@ const App = () => {
     const saved = localStorage.getItem("theme");
     if (saved === "dark") setDarkMode(true);
     else setDarkMode(false);
+  }, []);
+
+  // ✅ Restore fbUser on mount if available
+  useEffect(() => {
+    const storedUser = localStorage.getItem("fbUser");
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setFbUser(parsedUser);
+        setFbStatus("connected"); // assume still connected
+      } catch (err) {
+        console.error("Failed to parse fbUser from storage:", err);
+        localStorage.removeItem("fbUser");
+      }
+    }
   }, []);
 
   // Persist theme
@@ -83,7 +119,6 @@ const App = () => {
         });
       } catch (err) {
         console.error("FB init error:", err);
-        setFbReady(false);
       }
     };
 
@@ -152,7 +187,7 @@ const App = () => {
 
   // ---------------- Backend API calls ----------------
   // ---------------- Fetch All Mentions ----------------
-  async function fetchAllMentions() {
+  const fetchAllMentions = useCallback(async () => {
     if (!fbUser) {
       alert("Please login first to view mentions");
       return;
@@ -160,14 +195,14 @@ const App = () => {
 
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:8000/all/mentions", {
-        headers: { Authorization: `Bearer ${fbUser.accessToken}` },
-        params: { user_id: fbUser.id },
-      });
+      const res = await axios.get("http://localhost:8000/all/mentions");
 
       const data = res.data || {};
+      console.log("📥 Raw mentions response:", JSON.stringify(data, null, 2));
+
       const allMentions = [];
 
+      // Facebook
       if (Array.isArray(data.facebook)) {
         allMentions.push(
           ...data.facebook.map((item, i) => ({
@@ -181,45 +216,73 @@ const App = () => {
             mediaUrl: item.media_url || "",
             permalink: item.permalink || "",
             replies: item.replies || [],
-            avatar: item.avatar || `https://picsum.photos/seed/fb_${i}/100/100`,
+            avatar: item.avatar || null,
+            followers: item.followers || "N/A",
+            messages: item.messages || 0,
+            lastActive: item.last_active || "Unknown",
+            profileUrl: item.profile_url || item.permalink || "#",
           }))
         );
       }
 
-      if (Array.isArray(data.instagram)) {
+      // Instagram
+      if (Array.isArray(data.instagram?.data)) {
         allMentions.push(
-          ...data.instagram.map((item, i) => ({
+          ...data.instagram.data.map((item, i) => ({
             platform: "Instagram",
             id: item.id || `ig_m_${i}`,
-            message: item.text || item.caption || "",
+            message: item.caption || "",
             content: item.caption || "",
             time: item.timestamp || new Date().toISOString(),
-            mediaId: item.media_id || item.id || `ig_media_${i}`,
+            mediaId: item.id || `ig_media_${i}`,
             username: item.username || "Instagram User",
             mediaUrl: item.media_url || "",
             permalink: item.permalink || "",
-            replies: item.replies || [],
-            avatar: item.avatar || `https://picsum.photos/seed/ig_${i}/100/100`,
+            replies: [],
+            avatar: item.avatar || null,
+            followers: item.followers || "N/A",
+            messages: item.messages || 0,
+            lastActive: item.last_active || "Unknown",
+            profileUrl: item.profile_url || item.permalink || "#",
           }))
         );
       }
 
-      if (Array.isArray(data.x)) {
+      // X (Twitter)
+      if (Array.isArray(data.x?.data)) {
         allMentions.push(
-          ...data.x.map((item, i) => ({
+          ...data.x.data.map((item, i) => ({
             platform: "X",
             id: item.id || `x_m_${i}`,
             message: item.text || "",
             content: item.text || "",
-            time: item.timestamp || new Date().toISOString(),
-            mediaId: item.media_id || item.id || `x_media_${i}`,
-            username: item.username || "X User",
+            time: item.created_at || new Date().toISOString(),
+            username: item.author_id || "X User",   // replace with actual author lookup if backend provides it
+            mediaId: item.id || `x_media_${i}`,
             mediaUrl: item.media_url || "",
             permalink: item.permalink || "",
-            replies: item.replies || [],
-            avatar: item.avatar || `https://picsum.photos/seed/x_${i}/100/100`,
+            replies: [],
+            avatar: item.avatar || null,
+            followers: item.followers || "N/A",
+            messages: item.messages || 0,
+            lastActive: item.last_active || "Unknown",
+            profileUrl: item.profile_url || `https://x.com/${item.username || item.author_id}`,
           }))
         );
+      }
+
+      // ✅ Final log before updating state
+      console.log("✅ Parsed mentions:", allMentions);
+
+      if (data.x?.error) {
+        console.warn("❌ X API error:", data.x);
+        alert(`Twitter API error: ${data.x.message || "Unknown error"}`);
+      }
+      if (Array.isArray(data.facebook) && data.facebook.length === 0) {
+        console.warn("⚠️ No Facebook mentions. Token may lack permissions.");
+      }
+      if (Array.isArray(data.instagram?.data) && data.instagram.data.length === 0) {
+        console.warn("⚠️ No Instagram mentions (tags) found.");
       }
 
       setMentions(allMentions);
@@ -229,89 +292,156 @@ const App = () => {
     } finally {
       setLoading(false);
     }
-  }
+  }, [fbUser]);
 
   // ---------------- Fetch DMs ----------------
-  async function fetchDms() {
+  const fetchDms = useCallback(async () => {
     if (!fbUser) {
       alert("Please login first to view DMs");
       return;
     }
-
-    setLoading(true);
-    try {
-      const res = await axios.get("http://localhost:8000/instagram/dms", {
-        headers: { Authorization: `Bearer ${fbUser.accessToken}` },
-        params: { user_id: fbUser.id },
-      });
-
-      const data = res.data?.data || [];
-      const dmsFormatted = data.map((item, i) => ({
-        id: item.id || `dm_${i}`,
-        username: item.username || "Unknown",
-        fullName: item.full_name || "",
-        avatar: item.avatar || `https://picsum.photos/seed/dm_${i}/100/100`,
-        lastMessage: item.last_message || "",
-        time: item.timestamp || new Date().toISOString(),
-        unread: item.unread || 0,
-        userId: item.user_id,
-        messages: item.messages || [],
-      }));
-
-      setDms(dmsFormatted);
-    } catch (err) {
-      console.error("Fetch DMs error:", err);
-      setDms([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // ---------------- Fetch Posts ----------------
-  async function fetchPosts() {
-    if (!fbUser) {
-      alert("Please login first to view posts");
+    if (!selectedPage?.access_token) {
+      alert("Please select a Facebook Page first.");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:8000/instagram/posts", {
-        headers: { Authorization: `Bearer ${fbUser.accessToken}` },
-        params: { user_id: fbUser.id },
+      const res = await axios.get("http://localhost:8000/facebook/conversations", {
+        params: {
+          page_id: selectedPage.id,
+          access_token: selectedPage.access_token, // ✅ Page token
+        },
       });
 
-      const data = res.data?.data || [];
-      const postsFormatted = data.map((item, i) => ({
-        id: item.id || `post_${i}`,
-        caption: item.caption || "(no caption)",
-        content: item.content || "",
-        page: item.page || "Unknown",
-        timestamp: item.timestamp || new Date().toISOString(),
-        mediaUrl: item.media_url || "",
-      }));
+      const conversations = res.data?.conversations || [];
 
-      setPosts(postsFormatted);
+      const dmsFormatted = conversations.map((item) => {
+        const participants = item.participants?.data || [];
+        const firstUser = participants[0] || {};
+        const lastMsg = (item.messages?.data || [])[0] || {};
+
+        const formattedMessages = (item.messages?.data || []).map((m) => ({
+          id: m.id || `msg_${Date.now()}`,
+          text: m.message || "",
+          time: m.created_time || new Date().toISOString(),
+          sender: m.from?.name || "Unknown",
+          isMe: m.from?.id === selectedPage.id, // ✅ check against Page ID
+        }));
+
+        return {
+          id: item.id,
+          username: firstUser.name || "Unknown",
+          fullName: firstUser.name || "",
+          avatar: firstUser.id
+            ? `https://graph.facebook.com/${firstUser.id}/picture?type=normal&access_token=${selectedPage.access_token}`
+            : "/default-avatar.png",
+          lastMessage: lastMsg.message || "",
+          time: lastMsg.created_time || item.updated_time,
+          unread: 0,
+          userId: item.id,
+          messages: formattedMessages,
+        };
+      });
+
+      setDms(dmsFormatted);
     } catch (err) {
-      console.error("Fetch Posts error:", err);
-      setPosts([]);
+      console.error("Fetch DMs error:", err.response?.data || err.message);
+      setDms([]);
     } finally {
       setLoading(false);
     }
-  }
+  }, [fbUser, selectedPage]);
+
+  useEffect(() => {
+    if (selectedPage?.access_token) {
+      fetchDms(); // auto-fetch when page changes
+    }
+  }, [selectedPage, fetchDms]);
+
+  // // ---------------- Fetch Posts ----------------
+  // const fetchPosts = useCallback(async () => {
+  //   if (!fbUser?.accessToken) {
+  //     alert("Please login first to view posts");
+  //     return;
+  //   }
+
+  //   setLoading(true);
+  //   try {
+  //     const res = await axios.get(
+  //       `https://graph.facebook.com/v23.0/${process.env.REACT_APP_FB_PAGE_ID}/posts`,
+  //       {
+  //         params: {
+  //           fields: "id,message,created_time,full_picture,permalink_url",
+  //           access_token: fbUser.accessToken,
+  //         },
+  //       }
+  //     );
+
+  //     const data = res.data?.data || [];
+  //     const postsFormatted = data.map((item, i) => ({
+  //       id: item.id || `post_${i}`,
+  //       caption: item.message?.split("\n")[0] || "(no caption)",
+  //       content: item.message || "",
+  //       page: "Facebook Page",
+  //       timestamp: item.created_time || new Date().toISOString(),
+  //       mediaUrl: item.full_picture || "",
+  //       permalink: item.permalink_url || "#",
+  //     }));
+
+  //     setPosts(postsFormatted);
+  //   } catch (err) {
+  //     console.error("❌ Fetch Posts error:", err);
+  //     setPosts([]);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, [fbUser]);
+
+  // --- fetch pages ---
+  const fetchPages = useCallback(async () => {
+    try {
+      const res = await axios.get(
+        `https://graph.facebook.com/v23.0/me/accounts?access_token=${fbUser.accessToken}`
+      );
+
+      console.log("✅ Raw pages response:", res.data);
+      console.log("✅ Extracted pages list:", res.data?.data || []);
+
+      setPages(res.data?.data || []); // each item has {id, name, access_token}
+    } catch (err) {
+      console.error("❌ Fetch Pages error:", err);
+      setPages([]);
+    }
+  }, [fbUser]);
+
+  // ---------------- Auto Fetch Data After Login ----------------
+  useEffect(() => {
+    if (fbUser) {
+      console.log("👤 fbUser set, fetching data...");
+      fetchAllMentions();
+      fetchDms();
+      // fetchPosts();
+      fetchPages();
+    }
+  }, [fbUser, fetchAllMentions, fetchPages, fetchDms]);
 
   // ---------------- Reply to mention ----------------
   const handleReply = async () => {
     if (!selectedMessage || !replyText.trim()) return;
 
     try {
-      const form = new FormData();
-      form.append("media_id", selectedMessage.mediaId);
-      form.append("comment_text", replyText.trim());
-
-      await axios.post("http://localhost:8000/instagram/reply-to-mentions", form, {
-        headers: { "Content-Type": "multipart/form-data" },
+      await axios.post("http://localhost:8000/instagram/reply-to-mentions", {
+        media_id: selectedMessage.mediaId,
+        comment_text: replyText.trim(),
       });
+      // const form = new FormData();
+      // form.append("media_id", selectedMessage.mediaId);
+      // form.append("comment_text", replyText.trim());
+
+      // await axios.post("http://localhost:8000/instagram/reply-to-mentions", form, {
+      //   headers: { "Content-Type": "multipart/form-data" },
+      // });
 
       // Update local state
       const reply = {
@@ -327,7 +457,7 @@ const App = () => {
 
       alert("✅ Reply sent");
     } catch (err) {
-      console.error("Reply error:", err);
+      console.error("Reply error:", err.response?.data || err.message);
       alert("❌ Failed to send reply.");
     }
   };
@@ -337,9 +467,14 @@ const App = () => {
     if (!selectedDm || !dmText.trim()) return;
 
     try {
-      await axios.post("http://localhost:8000/instagram/send-message", {
-        recipient_id: selectedDm.userId,
-        message: dmText.trim()
+      const formData = new FormData();
+      formData.append("page_id", selectedPage.id); 
+      formData.append("access_token", selectedPage.access_token); // ✅ Page token
+      formData.append("recipient_psid", selectedDm.userId);
+      formData.append("message_text", dmText.trim());
+
+      await axios.post("http://localhost:8000/facebook/message/send", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       const newMessage = {
@@ -347,19 +482,21 @@ const App = () => {
         text: dmText.trim(),
         time: new Date().toISOString(),
         sender: "You",
-        isMe: true
+        isMe: true,
       };
 
-      setDms((prev) => prev.map((dm) =>
-        dm.id === selectedDm.id
-          ? {
-            ...dm,
-            messages: [...dm.messages, newMessage],
-            lastMessage: dmText.trim(),
-            time: new Date().toISOString()
-          }
-          : dm
-      ));
+      setDms((prev) =>
+        prev.map((dm) =>
+          dm.id === selectedDm.id
+            ? {
+              ...dm,
+              messages: [...dm.messages, newMessage],
+              lastMessage: dmText.trim(),
+              time: new Date().toISOString(),
+            }
+            : dm
+        )
+      );
 
       setSelectedDm((prev) =>
         prev
@@ -367,7 +504,7 @@ const App = () => {
             ...prev,
             messages: [...prev.messages, newMessage],
             lastMessage: dmText.trim(),
-            time: new Date().toISOString()
+            time: new Date().toISOString(),
           }
           : prev
       );
@@ -375,7 +512,7 @@ const App = () => {
       setDmText("");
       alert("✅ Message sent");
     } catch (err) {
-      console.error("Send DM error:", err);
+      console.error("Send DM error:", err.response?.data || err.message);
       alert("❌ Failed to send message.");
     }
   };
@@ -383,67 +520,112 @@ const App = () => {
   const handleDmClick = async (dm) => {
     setSelectedDm(dm);
 
-    // Mark as read via backend if endpoint exists
     try {
-      await axios.patch(`http://localhost:8000/instagram/messages/${dm.id}/read`);
+      const res = await axios.get(`https://graph.facebook.com/v23.0/${dm.id}`, {
+        params: {
+          fields: "messages{message,from,created_time}",
+          access_token: selectedPage.access_token, // ✅ Page token
+        },
+      });
 
-      // Update local state to mark as read
-      setDms(prev => prev.map(item =>
-        item.id === dm.id ? { ...item, unread: 0 } : item
-      ));
+      const fullMessages = (res.data?.messages?.data || []).map((m) => ({
+        id: m.id,
+        text: m.message,
+        time: m.created_time,
+        sender: m.from?.name || "Unknown",
+        isMe: m.from?.id === selectedPage.id, // ✅ match Page ID
+      }));
+
+      setSelectedDm((prev) =>
+        prev ? { ...prev, messages: fullMessages } : dm
+      );
     } catch (err) {
-      console.warn("Could not mark message as read:", err);
-      // Still update local state even if backend call fails
-      setDms(prev => prev.map(item =>
-        item.id === dm.id ? { ...item, unread: 0 } : item
-      ));
+      console.error("❌ Could not fetch conversation messages:", err.response?.data || err.message);
     }
+
+    setDms((prev) =>
+      prev.map((item) =>
+        item.id === dm.id ? { ...item, unread: 0 } : item
+      )
+    );
   };
 
   const handleMakePost = async () => {
-    const titleInput = document.querySelector('input[type="text"]');
-    const contentTextarea = document.querySelector('textarea');
+    if (saving) return; // prevent duplicate clicks
+    setSaving(true);
 
-    const title = titleInput?.value || '';
-    const content = contentTextarea?.value || '';
-
-    if (!title.trim() || !content.trim()) {
-      alert('Please add both a title and content for your post');
+    if (!postContent.trim()) {
+      alert("Please enter some text for your post");
+      setSaving(false);
       return;
     }
 
-    if (!selectedPage) {
-      alert('Please select a page to post to');
+    if (!fbUser?.accessToken) {
+      alert("Facebook access token missing. Please log in again.");
+      setSaving(false);
       return;
     }
+
+    if (!selectedPage?.access_token) {
+      alert("Please select a page before posting.");
+      setSaving(false);
+      return;
+    }
+
+    // if (selectedPhoto && selectedVideo) {
+    //   alert("Please upload only one media type (photo OR video).");
+    //   setSaving(false);
+    //   return;
+    // }
 
     try {
       const formData = new FormData();
-      formData.append('caption', title);
-      formData.append('message', content);
-      formData.append('page_id', selectedPage);
-      if (selectedPhoto) formData.append('media', selectedPhoto);
-      if (selectedVideo) formData.append('media', selectedVideo);
+      formData.append("message", postContent);
+      formData.append("access_token", selectedPage.access_token); // ✅ Page token
+      formData.append("page_id", selectedPage.id); // ✅ Page ID
 
-      await axios.post("http://localhost:8000/instagram/create-post", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      if (selectedPhoto) {
+        formData.append("image_files", selectedPhoto);
+      }
 
-      // Refresh posts
-      fetchPosts();
+      if (selectedVideo) {
+        formData.append("video_file", selectedVideo);
+      }
+
+      const res = await axios.post(
+        "http://localhost:8000/facebook/posts",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      console.log("✅ Post response:", res.data);
+
+      // --- Add to UI immediately ---
+      const newPost = {
+        id: res.data.id || `temp_${Date.now()}`,
+        caption: postContent.split("\n")[0] || "(no caption)",
+        content: postContent,
+        page: selectedPage?.name || "Facebook Page",
+        timestamp: new Date().toISOString(),
+        mediaUrl: selectedPhoto ? URL.createObjectURL(selectedPhoto) : "",
+        permalink: res.data.permalink || "#",
+      };
+
+      setPosts((prev) => [newPost, ...prev]);
 
       // Reset form
       setShowPostForm(false);
-      setSelectedPage("");
+      setPostContent("");
+      setSelectedPage(null);
       setSelectedPhoto(null);
       setSelectedVideo(null);
-      if (titleInput) titleInput.value = '';
-      if (contentTextarea) contentTextarea.value = '';
 
-      alert('✅ Post created successfully!');
+      alert("✅ Post created successfully!");
     } catch (err) {
-      console.error("Create post error:", err);
-      alert('❌ Failed to create post.');
+      console.error("❌ Create post error:", err);
+      alert("❌ Failed to create post.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -474,17 +656,23 @@ const App = () => {
                 }
 
                 // Update frontend state with real user data
-                setFbUser({
+                const userData = {
                   id: userInfo.id || userID,
                   name: userInfo.name,
                   email: userInfo.email,
                   picture: userInfo.picture?.data?.url,
                   accessToken,
-                });
+                };
+
+                setFbUser(userData);
+
+                // ✅ Save to localStorage so it persists after refresh
+                localStorage.setItem("fbUser", JSON.stringify(userData));
+
 
                 // ✅ Send user info + token to backend
                 axios.post("http://localhost:8000/facebook/auth", {
-                  access_token: accessToken || userID,
+                  access_token: accessToken,
                   user_id: userInfo.id,
                   name: userInfo.name,
                   email: userInfo.email,
@@ -493,20 +681,13 @@ const App = () => {
                   .then(() => console.log("✅ Synced with backend"))
                   .catch((err) => console.error("❌ Backend sync error:", err));
 
-                // Auto-fetch data after login
-                setTimeout(() => {
-                  fetchAllMentions();
-                  fetchDms();
-                  fetchPosts();
-                }, 1000);
-
                 alert("✅ Logged in successfully");
               }
             );
           }
         },
         {
-          scope: "public_profile,email,pages_read_engagement,pages_show_list,instagram_basic",
+          scope: "public_profile,email,pages_read_engagement,pages_show_list,pages_manage_metadata,pages_read_user_content,instagram_basic,instagram_manage_comments,instagram_manage_messages",
           return_scopes: true,
           auth_type: "rerequest"
         }
@@ -529,15 +710,11 @@ const App = () => {
     setPosts([]);
     setSelectedMessage(null);
     setSelectedDm(null);
-    setFbStatus(null);
-  };
+    setFbStatus("unknown");
 
-  // const fbStatusMessage = () => {
-  //   if (!fbReady) return "Facebook SDK not ready.";
-  //   if (fbStatus === "connected") return `Facebook: connected ${fbUser?.name ? `- ${fbUser.name}` : ''}`;
-  //   if (fbStatus === "not_authorized") return "Facebook: not authorized";
-  //   return "Facebook: not logged in";
-  // };
+    // ✅ Remove from localStorage
+    localStorage.removeItem("fbUser");
+  };
 
   // ---------------- Render ----------------
   return (
@@ -681,8 +858,9 @@ const App = () => {
               <button
                 onClick={() => {
                   if (activeTab === "mentions") fetchAllMentions();
+                  // else if (activeTab === "posts") fetchPosts();
                   else if (activeTab === "dms") fetchDms();
-                  else fetchPosts();
+                  // else fetchPosts();
                 }}
                 style={{
                   padding: "6px 10px",
@@ -697,7 +875,7 @@ const App = () => {
               </button>
             </div>
 
-            {activeTab === "mentions" && (
+            {/* {activeTab === "mentions" && (
               <>
                 {!fbUser ? (
                   <div style={{ textAlign: "center", paddingTop: 30, color: darkMode ? "#9aa7c7" : "#6b7280" }}>
@@ -709,13 +887,22 @@ const App = () => {
                   <div style={{ textAlign: "center", paddingTop: 30, color: darkMode ? "#9aa7c7" : "#6b7280" }}>
                     <MessageSquare style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
                     <div>No mentions yet</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>Click Refresh to load</div>
+                    <div style={{ fontSize: 13, marginTop: 6 }}>{fbUser
+                      ? "If you expected data, check Graph API permissions in backend."
+                      : "Click Login to fetch mentions"}</div>
                   </div>
                 ) : (
                   mentions.map((m) => (
                     <div
                       key={m.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => setSelectedMessage(m)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          setSelectedMessage(m);
+                        }
+                      }}
                       style={{
                         display: "flex",
                         gap: 10,
@@ -740,15 +927,180 @@ const App = () => {
                       )}
                       <div style={{ flex: 1 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <strong>{m.username}</strong>
-                          <small style={{ color: darkMode ? "#94a3b8" : "#6b7280", fontSize: 12 }}>{new Date(m.time).toLocaleString()}</small>
+                          <strong>{m.username}<span style={{ fontSize: 12, opacity: 0.7 }}>({m.platform})</span></strong>
+                          <small style={{ color: darkMode ? "#94a3b8" : "#6b7280", fontSize: 12 }}>
+                            {m.time ? new Date(m.time).toLocaleString() : "Unknown time"}
+                          </small>
                         </div>
-                        <div style={{ marginTop: 6, fontSize: 14, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{m.message || "(no message)"}</div>
+                        <div style={{ marginTop: 6, fontSize: 14, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{m.message || m.content || m.text || "(no text)"}</div>
                         {m.replies && m.replies.length > 0 && (
                           <div style={{ marginTop: 4, fontSize: 12, color: darkMode ? "#88a0c7" : "#4b5563", display: "flex", alignItems: "center", gap: 4 }}>
-                            <MessageSquare size={12} /> {m.replies.length} reply
+                            <MessageSquare size={12} /> {m.replies.length} {m.replies.length > 1 ? "replies" : "reply"}
                           </div>
                         )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </>
+            )} */}
+
+            {activeTab === "mentions" && (
+              <>
+                {!fbUser ? (
+                  // 🚫 Login required
+                  <div
+                    style={{
+                      textAlign: "center",
+                      paddingTop: 30,
+                      color: darkMode ? "#9aa7c7" : "#6b7280",
+                    }}
+                  >
+                    <MessageSquare
+                      style={{ width: 48, height: 48, margin: "0 auto 12px" }}
+                    />
+                    <div>Please login to view mentions</div>
+                    <div style={{ fontSize: 13, marginTop: 6 }}>
+                      Click the login button above
+                    </div>
+                  </div>
+                ) : loading ? (
+                  // ⏳ While fetching
+                  <div
+                    style={{
+                      textAlign: "center",
+                      paddingTop: 30,
+                      color: darkMode ? "#9aa7c7" : "#6b7280",
+                    }}
+                  >
+                    <MessageSquare
+                      style={{ width: 48, height: 48, margin: "0 auto 12px" }}
+                    />
+                    <div>Loading mentions...</div>
+                  </div>
+                ) : mentions.length === 0 ? (
+                  // 🟢 Logged in but no mentions
+                  <div
+                    style={{
+                      textAlign: "center",
+                      paddingTop: 30,
+                      color: darkMode ? "#9aa7c7" : "#6b7280",
+                    }}
+                  >
+                    <MessageSquare
+                      style={{ width: 48, height: 48, margin: "0 auto 12px" }}
+                    />
+                    <div>No mentions yet</div>
+                    <div style={{ fontSize: 13, marginTop: 6 }}>
+                      If you expected data, check Graph API permissions in backend.
+                    </div>
+                  </div>
+                ) : (
+                  // ✅ Logged in and mentions available
+                  mentions.map((m) => (
+                    <div
+                      key={m.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setSelectedMessage(m)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          setSelectedMessage(m);
+                        }
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        padding: 12,
+                        borderRadius: 10,
+                        cursor: "pointer",
+                        marginBottom: 10,
+                        background:
+                          selectedMessage?.id === m.id
+                            ? "#006CFC"
+                            : darkMode
+                              ? "#0b1a2b"
+                              : "#eef7ff",
+                        color:
+                          selectedMessage?.id === m.id
+                            ? "#fff"
+                            : darkMode
+                              ? "#e6eefc"
+                              : "#0b1c3a",
+                        transition: "background 0.2s ease",
+                      }}
+                    >
+                      {/* ✅ Avatar */}
+                      {m.avatar ? (
+                        <img
+                          src={m.avatar}
+                          alt={m.username}
+                          style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: "50%",
+                            background: "#c7d9ff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {m.username ? m.username.charAt(0).toUpperCase() : "U"}
+                        </div>
+                      )}
+
+                      {/* ✅ Text section */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <strong
+                            style={{
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {m.username}
+                          </strong>
+                          <small
+                            style={{
+                              color: darkMode ? "#94a3b8" : "#6b7280",
+                              fontSize: 12,
+                              marginLeft: 8,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {m.time ? new Date(m.time).toLocaleString() : "Unknown"}
+                          </small>
+                        </div>
+                        <div
+                          style={{
+                            marginTop: 6,
+                            fontSize: 14,
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {m.message || m.content || m.text || "(no text)"}
+                        </div>
                       </div>
                     </div>
                   ))
@@ -758,17 +1110,65 @@ const App = () => {
 
             {activeTab === "dms" && (
               <>
+                {/* 🔽 Page Selector for DMs */}
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
+                    Select Page: *
+                  </label>
+                  <select
+                    value={selectedPage?.id || ""}
+                    onChange={(e) => {
+                      const page = pages.find((p) => p.id === e.target.value);
+                      setSelectedPage(page || null); // update state
+                      setDms([]); // clear old DMs
+                      if (page) fetchDms();
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      background: darkMode ? "#374151" : "#fff",
+                      color: darkMode ? "#f3f4f6" : "#111827",
+                    }}
+                  >
+                    <option value="">-- Select Page --</option>
+                    {pages.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 🔽 Messages Section */}
                 {!fbUser ? (
-                  <div style={{ textAlign: "center", paddingTop: 30, color: darkMode ? "#9aa7c7" : "#6b7280" }}>
+                  <div
+                    style={{
+                      textAlign: "center",
+                      paddingTop: 30,
+                      color: darkMode ? "#9aa7c7" : "#6b7280",
+                    }}
+                  >
                     <Mail style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
                     <div>Please login to view messages</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>Click the login button above</div>
+                    <div style={{ fontSize: 13, marginTop: 6 }}>
+                      Click the login button above
+                    </div>
                   </div>
                 ) : dms.length === 0 ? (
-                  <div style={{ textAlign: "center", paddingTop: 30, color: darkMode ? "#9aa7c7" : "#6b7280" }}>
+                  <div
+                    style={{
+                      textAlign: "center",
+                      paddingTop: 30,
+                      color: darkMode ? "#9aa7c7" : "#6b7280",
+                    }}
+                  >
                     <Mail style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
                     <div>No messages yet</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>Click Refresh to load</div>
+                    <div style={{ fontSize: 13, marginTop: 6 }}>
+                      Select a page and click Refresh
+                    </div>
                   </div>
                 ) : (
                   dms.map((dm) => (
@@ -782,38 +1182,76 @@ const App = () => {
                         borderRadius: 10,
                         cursor: "pointer",
                         marginBottom: 10,
-                        background: selectedDm?.id === dm.id ? "#006CFC" : darkMode ? "#0b1a2b" : "#eef7ff",
-                        color: selectedDm?.id === dm.id ? "#fff" : darkMode ? "#e6eefc" : "#0b1c3a",
+                        background:
+                          selectedDm?.id === dm.id
+                            ? "#006CFC"
+                            : darkMode
+                              ? "#0b1a2b"
+                              : "#eef7ff",
+                        color:
+                          selectedDm?.id === dm.id
+                            ? "#fff"
+                            : darkMode
+                              ? "#e6eefc"
+                              : "#0b1c3a",
                       }}
                     >
                       <img
                         src={dm.avatar}
                         alt={dm.username}
-                        style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover" }}
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 8,
+                          objectFit: "cover",
+                        }}
                       />
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
                           <strong>{dm.username}</strong>
                           {dm.unread > 0 && (
-                            <span style={{
-                              background: "#ef4444",
-                              color: "white",
-                              borderRadius: "50%",
-                              width: 20,
-                              height: 20,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: 12
-                            }}>
+                            <span
+                              style={{
+                                background: "#ef4444",
+                                color: "white",
+                                borderRadius: "50%",
+                                width: 20,
+                                height: 20,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 12,
+                              }}
+                            >
                               {dm.unread}
                             </span>
                           )}
                         </div>
-                        <div style={{ marginTop: 6, fontSize: 14, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                          {dm.message || "(no message)"}
+                        <div
+                          style={{
+                            marginTop: 6,
+                            fontSize: 14,
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {dm.lastMessage || "(no message)"}
                         </div>
-                        <div style={{ marginTop: 4, fontSize: 12, color: darkMode ? "#94a3b8" : "#6b7280" }}>
+                        <div
+                          style={{
+                            marginTop: 4,
+                            fontSize: 12,
+                            color: darkMode ? "#94a3b8" : "#6b7280",
+                          }}
+                        >
                           {new Date(dm.time).toLocaleString()}
                         </div>
                       </div>
@@ -822,6 +1260,7 @@ const App = () => {
                 )}
               </>
             )}
+
 
             {activeTab === "posts" && (
               <div style={{ padding: 16 }}>
@@ -864,27 +1303,11 @@ const App = () => {
 
                         <div style={{ marginBottom: 16 }}>
                           <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
-                            Add post title: *
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="Enter your post title here..."
-                            style={{
-                              width: '100%',
-                              padding: '12px',
-                              borderRadius: '8px',
-                              border: '1px solid #d1d5db',
-                              background: darkMode ? '#374151' : '#fff',
-                              color: darkMode ? '#f3f4f6' : '#111827'
-                            }}
-                          />
-                        </div>
-
-                        <div style={{ marginBottom: 16 }}>
-                          <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
                             Write Post: *
                           </label>
                           <textarea
+                            value={postContent}
+                            onChange={(e) => setPostContent(e.target.value)}
                             placeholder="Write your post content here..."
                             rows={4}
                             style={{
@@ -904,8 +1327,12 @@ const App = () => {
                             Select Page: *
                           </label>
                           <select
-                            value={selectedPage}
-                            onChange={(e) => setSelectedPage(e.target.value)}
+                            value={selectedPage?.id || ""}
+                            onChange={(e) => {
+                              const page = pages.find((p) => p.id === e.target.value);
+                              setSelectedPage(page || null); // store the whole object
+                              setDms([]);
+                            }}
                             style={{
                               width: '100%',
                               padding: '12px',
@@ -915,17 +1342,18 @@ const App = () => {
                               color: darkMode ? '#f3f4f6' : '#111827'
                             }}
                           >
-                            <option value="">Select Page</option>
-                            <option value="java">Java</option>
-                            <option value="html">Html</option>
-                            <option value="css">Css</option>
-                            <option value="javascript">Javascript</option>
+                            <option value="">-- Select Page --</option>
+                            {pages.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.name}
+                              </option>
+                            ))}
                           </select>
                         </div>
 
                         <div style={{ marginBottom: 16 }}>
                           <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
-                            Upload Media: *
+                            Upload Media (optional):
                           </label>
                           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                             <label style={{
@@ -933,61 +1361,69 @@ const App = () => {
                               border: selectedPhoto ? '2px solid #10b981' : '1px solid #d1d5db',
                               borderRadius: '8px',
                               background: darkMode ? '#4b5563' : '#e5e7eb',
-                              cursor: 'pointer',
+                              cursor: selectedVideo ? 'not-allowed' : 'pointer',
                               display: 'inline-block'
                             }}>
                               <input
                                 type="file"
                                 accept="image/*"
+                                disabled={!!selectedVideo}
                                 onChange={(e) => setSelectedPhoto(e.target.files[0])}
                                 style={{ display: 'none' }}
                               />
                               {selectedPhoto ? '✓ Photo Selected' : 'Upload Photo'}
                             </label>
+
                             <label style={{
                               padding: '10px 16px',
                               border: selectedVideo ? '2px solid #10b981' : '1px solid #d1d5db',
                               borderRadius: '8px',
                               background: darkMode ? '#4b5563' : '#e5e7eb',
-                              cursor: 'pointer',
+                              cursor: selectedPhoto ? 'not-allowed' : 'pointer',
                               display: 'inline-block'
                             }}>
                               <input
                                 type="file"
                                 accept="video/*"
+                                disabled={!!selectedPhoto}
                                 onChange={(e) => setSelectedVideo(e.target.files[0])}
                                 style={{ display: 'none' }}
                               />
                               {selectedVideo ? '✓ Video Selected' : 'Upload Video'}
                             </label>
                           </div>
-                          <small style={{ color: darkMode ? '#94a3b8' : '#6b7280', marginTop: 4, display: 'block' }}>
+                          {/* <small style={{ color: darkMode ? '#94a3b8' : '#6b7280', marginTop: 4, display: 'block' }}>
                             * Required: Please upload either a photo or video
-                          </small>
+                          </small> */}
                         </div>
 
                         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                           <button
                             onClick={handleMakePost}
+                            disabled={saving}
                             style={{
                               padding: '12px 20px',
                               border: 'none',
                               borderRadius: '8px',
-                              background: '#10b981',
+                              background: saving ? '#6b7280' : '#10b981',
                               color: 'white',
-                              cursor: 'pointer'
+                              cursor: saving ? 'not-allowed' : 'pointer',
+                              opacity: saving ? 0.7 : 1
                             }}
                           >
-                            Save Post
+                            {saving ? "Posting..." : "Save Post"}
                           </button>
+
                           <button
                             onClick={() => setShowPostForm(false)}
+                            disabled={saving}
                             style={{
                               padding: '12px 20px',
                               border: '1px solid #d1d5db',
                               borderRadius: '8px',
                               background: darkMode ? '#374151' : '#f9fafb',
-                              cursor: 'pointer'
+                              cursor: saving ? 'not-allowed' : 'pointer',
+                              opacity: saving ? 0.7 : 1
                             }}
                           >
                             Cancel
@@ -997,54 +1433,56 @@ const App = () => {
                     )}
 
                     {/* Posts List - Shows when no form is active or after creating posts */}
-                    {posts.length === 0 ? (
-                      <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
-                        <Image style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                        <div>No posts yet</div>
-                        <div style={{ fontSize: 13, marginTop: 6 }}>Click "Create Post" to get started</div>
-                      </div>
-                    ) : (
-                      <div>
-                        {posts.map((post) => (
-                          <div
-                            key={post.id}
-                            onClick={() => setSelectedPost(post)}   // 👈 added
-                            style={{
-                              padding: 16,
-                              borderRadius: 10,
-                              marginBottom: 12,
-                              background: darkMode ? '#1f2937' : '#fff',
-                              border: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb'),
-                              cursor: "pointer"
-                            }}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                              <div>
-                                <strong style={{ fontSize: 16 }}>{post.caption}</strong>
-                                <div style={{ fontSize: 12, color: darkMode ? '#94a3b8' : '#6b7280', marginTop: 4 }}>
-                                  Posted to: {post.page}
+                    {!showPostForm && (
+                      posts.length === 0 ? (
+                        <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
+                          <Image style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
+                          <div>No posts yet</div>
+                          <div style={{ fontSize: 13, marginTop: 6 }}>Click "Create Post" to get started</div>
+                        </div>
+                      ) : (
+                        <div>
+                          {posts.map((post) => (
+                            <div
+                              key={post.id}
+                              onClick={() => setSelectedPost(post)}
+                              style={{
+                                padding: 16,
+                                borderRadius: 10,
+                                marginBottom: 12,
+                                background: darkMode ? '#1f2937' : '#fff',
+                                border: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb'),
+                                cursor: "pointer"
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                <div>
+                                  <strong style={{ fontSize: 16 }}>{post.caption || post.content.slice(0, 30)}</strong>
+                                  <div style={{ fontSize: 12, color: darkMode ? '#94a3b8' : '#6b7280', marginTop: 4 }}>
+                                    Posted to: {post.page}
+                                  </div>
                                 </div>
+                                <small style={{ color: darkMode ? '#94a3b8' : '#6b7280', fontSize: 12 }}>
+                                  {new Date(post.timestamp).toLocaleDateString()}
+                                </small>
                               </div>
-                              <small style={{ color: darkMode ? '#94a3b8' : '#6b7280', fontSize: 12 }}>
-                                {new Date(post.timestamp).toLocaleDateString()}
-                              </small>
+                              <p style={{ marginBottom: 12, color: darkMode ? '#d1d5db' : '#374151' }}>{post.content}</p>
+                              {post.mediaUrl && (
+                                <img
+                                  src={post.mediaUrl}
+                                  alt="Post"
+                                  style={{
+                                    width: 100,
+                                    height: 100,
+                                    objectFit: 'cover',
+                                    borderRadius: 8
+                                  }}
+                                />
+                              )}
                             </div>
-                            <p style={{ marginBottom: 12, color: darkMode ? '#d1d5db' : '#374151' }}>{post.content}</p>
-                            {post.mediaUrl && (
-                              <img
-                                src={post.mediaUrl}
-                                alt="Post"
-                                style={{
-                                  width: 100,
-                                  height: 100,
-                                  objectFit: 'cover',
-                                  borderRadius: 8
-                                }}
-                              />
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )
                     )}
                   </>
                 )}
@@ -1063,7 +1501,9 @@ const App = () => {
                     </div>
                     <div>
                       <div style={{ fontWeight: 700 }}>Your Post</div>
-                      <div style={{ fontSize: 13, color: darkMode ? '#9aa7c7' : '#6b7280' }}>Instagram</div>
+                      <div style={{ fontSize: 13, color: darkMode ? "#9aa7c7" : "#6b7280" }}>
+                        {platformLabels[selectedMessage.platform]}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1109,6 +1549,24 @@ const App = () => {
                     <div>
                       <div style={{ fontWeight: 700 }}>{selectedMessage.username}</div>
                       <div style={{ fontSize: 13, color: darkMode ? "#9aa7c7" : "#6b7280" }}>Instagram</div>
+
+                      {/* ✅ View Profile Button */}
+                      <a href={selectedMessage.profileUrl} target="_blank" rel="noopener noreferrer">
+                        <button
+                          style={{
+                            marginTop: 6,
+                            padding: "4px 10px",
+                            fontSize: 12,
+                            borderRadius: 6,
+                            border: "1px solid rgba(0,0,0,0.1)",
+                            background: "#006CFC",
+                            color: "#fff",
+                            cursor: "pointer"
+                          }}
+                        >
+                          View Profile
+                        </button>
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -1141,7 +1599,9 @@ const App = () => {
                           </div>
                         )}
                         <div style={{ marginTop: 12, fontSize: 12, color: darkMode ? "#94a3b8" : "#64748b", textAlign: "right" }}>
-                          {new Date(selectedMessage.time).toLocaleString()}
+                          {selectedMessage.time
+                            ? new Date(selectedMessage.time).toLocaleString()
+                            : "Unknown time"}
                         </div>
                       </div>
                     </div>
@@ -1152,7 +1612,24 @@ const App = () => {
                     <div style={{ marginTop: 16 }}>
                       <div style={{ fontWeight: 700, marginBottom: 8, paddingLeft: 8 }}>Replies</div>
                       {(selectedMessage.replies || []).map((r) => (
-                        <div key={r.id} style={{ marginBottom: 12, display: "flex", justifyContent: "flex-end" }}>
+                        <div key={r.id} style={{ marginBottom: 12, display: "flex", justifyContent: "flex-end", gap: 8, alignItems: "flex-start" }}>
+                          {/* Avatar Circle */}
+                          <div style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: "50%",
+                            background: "#006CFC",
+                            color: "#fff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 12,
+                            fontWeight: 700
+                          }}>
+                            {r.author ? r.author.charAt(0).toUpperCase() : "Y"}
+                          </div>
+
+                          {/* Reply Bubble */}
                           <div style={{
                             maxWidth: "70%",
                             padding: "12px 16px",
@@ -1163,7 +1640,7 @@ const App = () => {
                             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{r.author}</div>
                             <div style={{ fontSize: 14 }}>{r.text}</div>
                             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", textAlign: "right", marginTop: 6 }}>
-                              {new Date(r.time).toLocaleString()}
+                              {r.time ? new Date(r.time).toLocaleString() : "Unknown time"}
                             </div>
                           </div>
                         </div>
@@ -1172,42 +1649,49 @@ const App = () => {
                   )}
                 </div>
 
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <textarea
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleReply();
-                      }
-                    }}
-                    placeholder="Type your reply and press Enter"
-                    style={{
-                      flex: 1,
-                      padding: 12,
-                      borderRadius: 8,
-                      border: "1px solid rgba(0,0,0,0.08)",
-                      minHeight: 48,
-                      resize: "vertical",
-                      background: darkMode ? "#0b1a2b" : "#fff",
-                      color: darkMode ? "#e6eefc" : "#0b1c3a",
-                    }}
-                  />
-                  <button
-                    onClick={handleReply}
-                    disabled={!replyText.trim()}
-                    style={{
-                      background: "#006CFC",
-                      color: "#fff",
-                      border: "none",
-                      padding: "10px 12px",
-                      borderRadius: 8,
-                      cursor: replyText.trim() ? "pointer" : "not-allowed",
-                    }}
-                  >
-                    <Send style={{ width: 16, height: 16 }} />
-                  </button>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <textarea
+                      aria-label="Reply to mention"
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleReply();
+                        }
+                      }}
+                      placeholder="Type your reply and press Enter"
+                      style={{
+                        flex: 1,
+                        padding: 12,
+                        borderRadius: 8,
+                        border: "1px solid rgba(0,0,0,0.08)",
+                        minHeight: 48,
+                        resize: "vertical",
+                        background: darkMode ? "#0b1a2b" : "#fff",
+                        color: darkMode ? "#e6eefc" : "#0b1c3a",
+                      }}
+                    />
+                    <button
+                      aria-label="Send reply"
+                      onClick={handleReply}
+                      disabled={!replyText.trim()}
+                      style={{
+                        background: "#006CFC",
+                        color: "#fff",
+                        border: "none",
+                        padding: "10px 12px",
+                        borderRadius: 8,
+                        cursor: replyText.trim() ? "pointer" : "not-allowed",
+                      }}
+                    >
+                      <Send style={{ width: 16, height: 16 }} />
+                    </button>
+                  </div>
+                  <small style={{ fontSize: 12, color: darkMode ? "#94a3b8" : "#64748b" }}>
+                    Press Enter to send, Shift+Enter for new line
+                  </small>
                 </div>
               </>
             ) : activeTab === "dms" && selectedDm ? (
@@ -1227,7 +1711,6 @@ const App = () => {
                 </div>
 
                 <div style={{ flex: 1, overflowY: "auto", padding: 12, borderRadius: 10, background: darkMode ? "#071226" : "#fff", marginBottom: 12 }}>
-                  {/* DM messages */}
                   {selectedDm.messages.map((msg) => (
                     <div key={msg.id} style={{ marginBottom: 12, display: "flex", justifyContent: msg.isMe ? "flex-end" : "flex-start" }}>
                       <div style={{
@@ -1252,6 +1735,7 @@ const App = () => {
                       </div>
                     </div>
                   ))}
+                  <div ref={messagesEndRef} /> {/* 👈 auto-scroll target */}
                 </div>
 
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -1280,7 +1764,7 @@ const App = () => {
                     onClick={handleSendDm}
                     disabled={!dmText.trim()}
                     style={{
-                      background: "#006CFC",
+                      background: dmText.trim() ? "#006CFC" : "#9ca3af",
                       color: "#fff",
                       border: "none",
                       padding: "10px 12px",
@@ -1332,90 +1816,6 @@ const App = () => {
               </div>
             )}
           </section>
-
-          {/* Right profile / meta sidebar */}
-          <aside style={{ width: 320, borderLeft: "1px solid rgba(0,0,0,0.06)", padding: 16, overflowY: "auto", background: darkMode ? "#06102a" : "#fff" }}>
-            {activeTab === "mentions" && selectedMessage ? (
-              <>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 88, height: 88, borderRadius: 14, background: "#c7d9ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 800 }}>
-                    {selectedMessage.username?.charAt(0).toUpperCase()}
-                  </div>
-                  <div style={{ fontSize: 18, fontWeight: 700 }}>{selectedMessage.username}</div>
-                  <div style={{ color: darkMode ? "#9aa7c7" : "#6b7280" }}>Instagram User</div>
-                </div>
-
-                <div style={{ marginTop: 18 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div style={{ fontWeight: 700 }}>Followers</div>
-                    <div>1.2K</div>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div style={{ fontWeight: 700 }}>Messages</div>
-                    <div>24</div>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div style={{ fontWeight: 700 }}>Last Active</div>
-                    <div>Today</div>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-                  <button style={{ flex: 1, padding: 10, borderRadius: 8, border: "none", background: "#006CFC", color: "#fff", cursor: "pointer" }}>View Profile</button>
-                  <button style={{ flex: 1, padding: 10, borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", background: "transparent", cursor: "pointer" }}>Block</button>
-                </div>
-              </>
-            ) : activeTab === "dms" && selectedDm ? (
-              <>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                  <img
-                    src={selectedDm.avatar}
-                    alt={selectedDm.username}
-                    style={{ width: 88, height: 88, borderRadius: 14, objectFit: "cover" }}
-                  />
-                  <div style={{ fontSize: 18, fontWeight: 700 }}>{selectedDm.username}</div>
-                  <div style={{ color: darkMode ? "#9aa7c7" : "#6b7280" }}>{selectedDm.fullName}</div>
-                </div>
-
-                <div style={{ marginTop: 18 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div style={{ fontWeight: 700 }}>Followers</div>
-                    <div>3.5K</div>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div style={{ fontWeight: 700 }}>Following</div>
-                    <div>892</div>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div style={{ fontWeight: 700 }}>Posts</div>
-                    <div>127</div>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div style={{ fontWeight: 700 }}>Last Active</div>
-                    <div>30 min ago</div>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-                  <button style={{ flex: 1, padding: 10, borderRadius: 8, border: "none", background: "#006CFC", color: "#fff", cursor: "pointer" }}>View Profile</button>
-                  <button style={{ flex: 1, padding: 10, borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", background: "transparent", cursor: "pointer" }}>Block</button>
-                </div>
-              </>
-            ) : (
-              <div style={{ textAlign: "center", color: darkMode ? "#9aa7c7" : "#6b7280" }}>
-                <Users style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                <div style={{ fontWeight: 700 }}>No selection</div>
-                <div style={{ marginTop: 6 }}>
-                  {activeTab === "mentions"
-                    ? "Select a mention to view profile & stats"
-                    : activeTab === "dms"
-                      ? "Select a conversation to view profile & stats"
-                      : "Select an item to view details"
-                  }
-                </div>
-              </div>
-            )}
-          </aside>
         </div>
       </main >
     </div >
