@@ -6788,3 +6788,9 @@
 {"asctime": "2025-10-03 12:42:54,279", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
 {"asctime": "2025-10-03 12:42:54,288", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
 {"asctime": "2025-10-03 12:42:54,288", "levelname": "INFO", "name": "app", "message": "No unreplied mentions found"}
+{"asctime": "2025-10-03 13:10:49,986", "levelname": "ERROR", "name": "app", "message": "Error in fetch_all_mentions: get_fb_mentions() missing 1 required positional argument: 'page_id'"}
+{"asctime": "2025-10-03 13:10:52,105", "levelname": "ERROR", "name": "app", "message": "Error in fetch_all_mentions: get_fb_mentions() missing 1 required positional argument: 'page_id'"}
+{"asctime": "2025-10-03 14:08:45,995", "levelname": "INFO", "name": "app", "message": "Error sending reply to the user in facebook"}
+{"asctime": "2025-10-03 14:09:17,693", "levelname": "INFO", "name": "app", "message": "Error sending reply to the user in facebook"}
+{"asctime": "2025-10-03 15:21:42,992", "levelname": "ERROR", "name": "app", "message": "Error in fetch_all_mentions: get_fb_mentions() missing 1 required positional argument: 'page_id'"}
+{"asctime": "2025-10-03 15:21:44,766", "levelname": "ERROR", "name": "app", "message": "Error in fetch_all_mentions: get_fb_mentions() missing 1 required positional argument: 'page_id'"}

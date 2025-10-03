@@ -6,3 +6,4 @@ social-env/
 env/
 __pycache__
 keyForMe.pem
+.vercel
