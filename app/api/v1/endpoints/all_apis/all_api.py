@@ -12,6 +12,7 @@ router=APIRouter(tags=["All API's"])
 @router.get("/all/mentions")
 async def get_all_mentions(
     access_token: str | None = None,
+    ig_user_id: str | None = None,
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -22,7 +23,7 @@ async def get_all_mentions(
     """
     # Use the same token for both Facebook and Instagram
     facebook_task = get_facebook_mentions(access_token=access_token, db=db)
-    instagram_task = get_instagram_mentions(access_token=access_token, db=db)
+    instagram_task = get_instagram_mentions(access_token=access_token, db=db,ig_user_id=ig_user_id)
     # x_task = get_x_mentions(db)
     
     # Wait for all tasks to complete

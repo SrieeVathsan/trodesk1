@@ -169,11 +169,12 @@ async def create_fb_post(
 
 
 
-async def get_fb_posts(db: AsyncSession, page_id:str,access_token: str | None = None):
+async def get_fb_posts(db: AsyncSession, page_id: str | None = None, access_token: str | None = None):
     """Get posts from a Facebook Page and store in DB."""
     token = access_token or PAGE_ACCESS_TOKEN
+    pid = str(page_id or FB_PAGE_ID)
     async with AsyncClient() as client:
-        url = f"{GRAPH}/{page_id}/posts"
+        url = f"{GRAPH}/{pid}/posts"
         params = {
             "fields": "id,message,created_time,permalink_url,from,comments.summary(true),reactions.summary(true)",
             "access_token": token
@@ -202,11 +203,12 @@ async def get_fb_posts(db: AsyncSession, page_id:str,access_token: str | None = 
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-async def get_fb_mentions(db: AsyncSession,page_id:str, access_token: str | None = None):
+async def get_fb_mentions(db: AsyncSession, page_id: str | None = None, access_token: str | None = None):
     """Get posts where the Page is tagged and store in DB."""
     token = access_token or PAGE_ACCESS_TOKEN
+    pid = str(page_id or FB_PAGE_ID)
     async with AsyncClient() as client:
-        url = f"{GRAPH}/{page_id}/tagged"
+        url = f"{GRAPH}/{pid}/tagged"
         params = {
             "fields": "id,message,from,created_time,permalink_url,username",
             "access_token": token
