@@ -1,13 +1,14 @@
 import json
 from fastapi import Request, BackgroundTasks, HTTPException, Depends
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from httpx import AsyncClient
 import logging
 from datetime import datetime
 import os
 from dotenv import load_dotenv
-from app.core.config import IG_USER_ID,ACCESS_TOKEN,GRAPH,VERIFY_TOKEN
+from app.core.config import IG_USER_ID, ACCESS_TOKEN, GRAPH, VERIFY_TOKEN
 import requests
 from app.models.models import MentionPost, Platform, User
 from app.services.db_services import get_unreplied_mentions
@@ -15,14 +16,15 @@ from app.services.db_services import get_unreplied_mentions
 
 
 
-async def send_instagram_message(to_user_id: str, message_body: str):
+async def send_instagram_message(to_user_id: str, message_body: str, access_token: str | None = None,ig_user_id:str=None):
     """Send an Instagram DM to a user."""
+    token = access_token or ACCESS_TOKEN
     async with AsyncClient() as http_client:
-        url = f"{GRAPH}/{IG_USER_ID}/messages"
+        url = f"{GRAPH}/{ig_user_id}/messages"
         data = {
             "recipient": {"id": to_user_id},
             "message": {"text": message_body},
-            "access_token": ACCESS_TOKEN
+            "access_token": token
         }
         try:
             resp = await http_client.post(url, json=data)
@@ -36,7 +38,7 @@ async def send_instagram_message(to_user_id: str, message_body: str):
             logging.error(f"Error sending Instagram DM: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Failed to send DM: {str(e)}")
 
-async def handle_instagram_message(to_user_id: str, message_body: str, profile_name: str, db: AsyncSession):
+async def handle_instagram_message(to_user_id: str, message_body: str, profile_name: str, db: AsyncSession, access_token: str | None = None):
     """Process incoming Instagram messages and respond."""
     # Simple keyword-based responses (like WhatsApp)
     if any(keyword in message_body.lower() for keyword in ['hi', 'hello', 'hey']):
@@ -47,7 +49,7 @@ async def handle_instagram_message(to_user_id: str, message_body: str, profile_n
         response = "Thanks for your message! We'll get back to you soon."
 
     # Send response
-    await send_instagram_message(to_user_id, response)
+    await send_instagram_message(to_user_id, response, access_token=access_token)
 
 async def verify_instagram_webhook(request: Request):
     """Verify Instagram webhook subscription."""
@@ -97,15 +99,16 @@ async def handle_instagram_webhook(request: Request, background_tasks: Backgroun
 
 
 
-async def fetch_ig_posts():
+async def fetch_ig_posts(access_token: str | None = None,ig_user_id:str=None):
     """
     Fetch posts from the authenticated Instagram account.
     """
+    token = access_token or ACCESS_TOKEN
     async with AsyncClient() as http_client:
-        url = f"{GRAPH}/{IG_USER_ID}/media"
+        url = f"{GRAPH}/{ig_user_id}/media"
         params = {
             "fields": "id,caption,media_type,media_url,timestamp,permalink",
-            "access_token": ACCESS_TOKEN
+            "access_token": token
         }
         try:
             resp = await http_client.get(url, params=params)
@@ -120,17 +123,18 @@ async def fetch_ig_posts():
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to fetch posts: {str(e)}")
 
-async def fetch_ig_mentions(db: AsyncSession):
+async def fetch_ig_mentions(db: AsyncSession, access_token: str | None = None,ig_user_id:str=None):
     """
     Fetch posts and stories where the Instagram account is tagged/mentioned.
     Stores them in the database similar to X (Twitter) mentions.
     """
+    token = access_token or ACCESS_TOKEN
     async with AsyncClient() as http_client:
         # Try mentions endpoint first
-        url = f"{GRAPH}/{IG_USER_ID}/mentions"
+        url = f"{GRAPH}/{ig_user_id}/mentions"
         params = {
             "fields": "id,caption,media_type,media_url,timestamp,permalink,username,owner",
-            "access_token": ACCESS_TOKEN
+            "access_token": token
         }
         try:
             resp = await http_client.get(url, params=params)
@@ -139,7 +143,7 @@ async def fetch_ig_mentions(db: AsyncSession):
             if "error" in data:
                 # Fallback to tags endpoint if mentions not supported
                 if "nonexisting field (mentions)" in data["error"]["message"]:
-                    return await fetch_ig_tags(db)
+                    return await fetch_ig_tags(db, access_token=token)
                 raise HTTPException(status_code=400, detail=data["error"]["message"])
             
             # Ensure platform exists
@@ -161,13 +165,14 @@ async def fetch_ig_mentions(db: AsyncSession):
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to fetch mentions: {str(e)}")
 
-async def fetch_ig_tags(db: AsyncSession):
+async def fetch_ig_tags(db: AsyncSession, access_token: str | None = None,ig_user_id:str=None):
     """Fallback for when mentions endpoint is not available."""
+    token = access_token or ACCESS_TOKEN
     async with AsyncClient() as http_client:
-        url = f"{GRAPH}/{IG_USER_ID}/tags"
+        url = f"{GRAPH}/{ig_user_id}/tags"
         params = {
             "fields": "id,caption,media_type,media_url,timestamp,permalink,username,owner",
-            "access_token": ACCESS_TOKEN
+            "access_token": token
         }
         try:
             resp = await http_client.get(url, params=params)
@@ -243,12 +248,13 @@ async def store_instagram_mentions(response: dict, db: AsyncSession, platform_id
     await db.commit()
 
 
-async def instagram_conversations():
-    url = f"{GRAPH}/{IG_USER_ID}/conversations"
+async def instagram_conversations(access_token: str | None = None,ig_user_id:str=None):
+    url = f"{GRAPH}/{ig_user_id}/conversations"
+    token = access_token or ACCESS_TOKEN
     params = {
         "platform": "instagram",
         "fields": "participants,messages{from,id,message,created_time}",
-        "access_token": ACCESS_TOKEN
+        "access_token": token
     }
     res = requests.get(url, params=params).json()
     if "error" in res:
@@ -256,14 +262,15 @@ async def instagram_conversations():
     return {"success": True, "conversations": res.get("data", [])}
 
 
-async def instagram_private_reply(comment_id: str, message: str):
-    url = f"{GRAPH}/{IG_USER_ID}/messages"
+async def instagram_private_reply(comment_id: str, message: str, access_token: str | None = None,ig_user_id:str=None):
+    url = f"{GRAPH}/{ig_user_id}/messages"
     payload = {
         "recipient": { "comment_id": comment_id },
         "message": { "text": message }
     }
+    token = access_token or ACCESS_TOKEN
     headers = {
-        "Authorization": f"Bearer {ACCESS_TOKEN}",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
     res = requests.post(url, json=payload, headers=headers).json()
@@ -272,19 +279,19 @@ async def instagram_private_reply(comment_id: str, message: str):
     return {"success": True, "message_id": res.get("message_id")}
 
 
-
-async def reply_to_mention(db: AsyncSession, media_id: str, comment_text: str):
+async def reply_to_mention(db: AsyncSession, media_id: str, comment_text: str, access_token: str | None = None):
     """
     Reply to a post where your Instagram account is tagged/mentioned.
     Requires:
         - `media_id`: The ID of the post where you're tagged.
         - `comment_text`: The comment to post.
     """
+    token = access_token or ACCESS_TOKEN
     async with AsyncClient() as http_client:
         url = f"{GRAPH}/{media_id}/comments"
         params = {
             "message": comment_text,
-            "access_token": ACCESS_TOKEN
+            "access_token": token
         }
         try:
             resp = await http_client.post(url, params=params)
@@ -308,3 +315,18 @@ async def reply_to_mention(db: AsyncSession, media_id: str, comment_text: str):
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to reply: {str(e)}")
 
+async def get_instagram_business_account(page_id: str, page_access_token: str):
+    """
+    Using a Facebook Page ID and Page Access Token, retrieve the connected Instagram Business Account ID (IG User ID).
+    """
+    url = f"{GRAPH}/{page_id}?fields=instagram_business_account&access_token={page_access_token}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        ig_account = data.get("instagram_business_account")
+        if ig_account:
+            return {"instagram_business_account_id": ig_account.get("id")}
+        else:
+            raise HTTPException(status_code=404, detail="No Instagram Business Account linked to this Page.")
+    else:
+        raise HTTPException(status_code=response.status_code, detail=response.text)

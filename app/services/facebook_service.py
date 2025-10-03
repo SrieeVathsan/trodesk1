@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from app.core.config import GRAPH, FB_PAGE_ID, PAGE_ACCESS_TOKEN
 from fastapi import HTTPException
 from httpx import AsyncClient
@@ -7,9 +8,86 @@ from app.models.models import Platform, User, MentionPost
 from app.services.db_services import get_unreplied_mentions
 from typing import List, Optional
 
+# async def create_fb_post(
+#     db: AsyncSession,
+#     message: str,
+#     photo_urls: Optional[List[str]] = None,
+#     image_files: Optional[List[bytes]] = None,
+#     image_filenames: Optional[List[str]] = None,
+#     access_token: Optional[str] = None,
+# ):
+#     """
+#     Create a Facebook Page post (text-only or with photos).
+#     """
+#     if photo_urls is None:
+#         photo_urls = []
+#     if image_files is None:
+#         image_files = []
+#     if image_filenames is None:
+#         image_filenames = []
+
+#     if len(image_files) != len(image_filenames):
+#         raise ValueError("image_files and image_filenames length mismatch")
+
+#     token = access_token or PAGE_ACCESS_TOKEN
+
+#     # Case 1: text-only post
+#     if not photo_urls and not image_files:
+#         async with AsyncClient() as client:
+#             url = f"{GRAPH}/{FB_PAGE_ID}/feed"
+#             params = {"message": message, "access_token": token}
+#             resp = await client.post(url, params=params)
+#             data = resp.json()
+#             if "error" in data:
+#                 raise HTTPException(status_code=400, detail=data["error"]["message"])
+#             return {"success": True, "post_id": data.get("id"), "data": data}
+
+#     # Case 2: one or multiple photos
+#     async with AsyncClient() as client:
+#         photo_ids = []
+
+#         # Upload photo URLs as unpublished
+#         for pu in photo_urls:
+#             up_url = f"{GRAPH}/{FB_PAGE_ID}/photos"
+#             params = {"access_token": token, "url": pu, "published": "false"}
+#             resp = await client.post(up_url, params=params)
+#             d = resp.json()
+#             if "error" in d:
+#                 raise HTTPException(status_code=400, detail=f"Error uploading photo URL: {d['error']['message']}")
+#             photo_ids.append(d["id"])
+
+#         # Upload file photos as unpublished
+#         for img_bytes, fname in zip(image_files, image_filenames):
+#             up_url = f"{GRAPH}/{FB_PAGE_ID}/photos"
+#             params = {"access_token": token, "published": "false"}
+#             files = {"source": (fname, img_bytes, "image/jpeg")}
+#             resp = await client.post(up_url, params=params, files=files)
+#             d = resp.json()
+#             if "error" in d:
+#                 raise HTTPException(status_code=400, detail=f"Error uploading photo file: {d['error']['message']}")
+#             photo_ids.append(d["id"])
+
+#         # Publish the post attaching the photos
+#         feed_url = f"{GRAPH}/{FB_PAGE_ID}/feed"
+#         params = {
+#             "message": message,
+#             "access_token": token,
+#         }
+#         for i, pid in enumerate(photo_ids):
+#             params[f"attached_media[{i}]"] = json.dumps({"media_fbid": pid})
+
+#         resp = await client.post(feed_url, data=params)  # <-- use data= not json=
+#         data = resp.json()
+#         if "error" in data:
+#             raise HTTPException(status_code=400, detail=data["error"]["message"])
+#         return {"success": True, "post_id": data.get("id"), "data": data}
+
+
+
 async def create_fb_post(
-    db: AsyncSession,
+    db,
     message: str,
+    page_id: str,
     photo_urls: Optional[List[str]] = None,
     image_files: Optional[List[bytes]] = None,
     image_filenames: Optional[List[str]] = None,
@@ -33,9 +111,9 @@ async def create_fb_post(
     # Case 1: text-only post
     if not photo_urls and not image_files:
         async with AsyncClient() as client:
-            url = f"{GRAPH}/{FB_PAGE_ID}/feed"
+            url = f"{GRAPH}/{page_id}/feed"
             params = {"message": message, "access_token": token}
-            resp = await client.post(url, params=params)
+            resp = await client.post(url, data=params)   # <-- use data= not json=
             data = resp.json()
             if "error" in data:
                 raise HTTPException(status_code=400, detail=data["error"]["message"])
@@ -47,44 +125,55 @@ async def create_fb_post(
 
         # Upload photo URLs as unpublished
         for pu in photo_urls:
-            up_url = f"{GRAPH}/{FB_PAGE_ID}/photos"
+            up_url = f"{GRAPH}/{page_id}/photos"
             params = {"access_token": token, "url": pu, "published": "false"}
-            resp = await client.post(up_url, params=params)
+            resp = await client.post(up_url, data=params)
             d = resp.json()
             if "error" in d:
-                raise HTTPException(status_code=400, detail=f"Error uploading photo URL: {d['error']['message']}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Error uploading photo URL: {d['error']['message']}"
+                )
             photo_ids.append(d["id"])
 
         # Upload file photos as unpublished
         for img_bytes, fname in zip(image_files, image_filenames):
-            up_url = f"{GRAPH}/{FB_PAGE_ID}/photos"
+            up_url = f"{GRAPH}/{page_id}/photos"
             params = {"access_token": token, "published": "false"}
             files = {"source": (fname, img_bytes, "image/jpeg")}
-            resp = await client.post(up_url, params=params, files=files)
+            resp = await client.post(up_url, data=params, files=files)
             d = resp.json()
             if "error" in d:
-                raise HTTPException(status_code=400, detail=f"Error uploading photo file: {d['error']['message']}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Error uploading photo file: {d['error']['message']}"
+                )
             photo_ids.append(d["id"])
 
         # Publish the post attaching the photos
-        feed_url = f"{GRAPH}/{FB_PAGE_ID}/feed"
+        feed_url = f"{GRAPH}/{page_id}/feed"
         params = {
             "message": message,
             "access_token": token,
-            "attached_media": [{"media_fbid": pid} for pid in photo_ids],
         }
-        resp = await client.post(feed_url, json=params)
+        # Attached media must be flattened into key-value pairs
+        for i, pid in enumerate(photo_ids):
+            params[f"attached_media[{i}]"] = json.dumps({"media_fbid": pid})
+
+        resp = await client.post(feed_url, data=params)  # <-- must be data=
         data = resp.json()
         if "error" in data:
             raise HTTPException(status_code=400, detail=data["error"]["message"])
         return {"success": True, "post_id": data.get("id"), "data": data}
 
 
-async def get_fb_posts(db: AsyncSession, access_token: str | None = None):
+
+
+async def get_fb_posts(db: AsyncSession, page_id:str,access_token: str | None = None):
     """Get posts from a Facebook Page and store in DB."""
     token = access_token or PAGE_ACCESS_TOKEN
     async with AsyncClient() as client:
-        url = f"{GRAPH}/{FB_PAGE_ID}/posts"
+        url = f"{GRAPH}/{page_id}/posts"
         params = {
             "fields": "id,message,created_time,permalink_url,from,comments.summary(true),reactions.summary(true)",
             "access_token": token
@@ -113,11 +202,11 @@ async def get_fb_posts(db: AsyncSession, access_token: str | None = None):
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-async def get_fb_mentions(db: AsyncSession, access_token: str | None = None):
+async def get_fb_mentions(db: AsyncSession,page_id:str, access_token: str | None = None):
     """Get posts where the Page is tagged and store in DB."""
     token = access_token or PAGE_ACCESS_TOKEN
     async with AsyncClient() as client:
-        url = f"{GRAPH}/{FB_PAGE_ID}/tagged"
+        url = f"{GRAPH}/{page_id}/tagged"
         params = {
             "fields": "id,message,from,created_time,permalink_url,username",
             "access_token": token
