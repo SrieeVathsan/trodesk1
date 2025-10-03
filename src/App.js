@@ -427,94 +427,81 @@ const App = () => {
   }, [fbUser, fetchAllMentions, fetchPages, fetchDms]);
 
   // ---------------- Reply to mention ----------------
-  const handleReply = async () => {
+  const handleReply = () => {
     if (!selectedMessage || !replyText.trim()) return;
 
-    try {
-      await axios.post("http://localhost:8000/instagram/reply-to-mentions", {
-        media_id: selectedMessage.mediaId,
-        comment_text: replyText.trim(),
-      });
-      // const form = new FormData();
-      // form.append("media_id", selectedMessage.mediaId);
-      // form.append("comment_text", replyText.trim());
+    const newReply = {
+      id: `r_${Date.now()}`,
+      text: replyText.trim(),
+      time: new Date().toISOString(),
+      author: "You", // just like sender in DMs
+      isMe: true,    // optional flag for styling consistency
+    };
 
-      // await axios.post("http://localhost:8000/instagram/reply-to-mentions", form, {
-      //   headers: { "Content-Type": "multipart/form-data" },
-      // });
+    // Update mentions list
+    setMentions((prev) =>
+      prev.map((m) =>
+        m.id === selectedMessage.id
+          ? {
+            ...m,
+            replies: [...(m.replies || []), newReply],
+          }
+          : m
+      )
+    );
 
-      // Update local state
-      const reply = {
-        id: `r_${Date.now()}`,
-        text: replyText.trim(),
-        time: new Date().toISOString(),
-        author: "You" // 👈 backend can later send actual author
-      };
+    // Update currently open mention
+    setSelectedMessage((prev) =>
+      prev
+        ? {
+          ...prev,
+          replies: [...(prev.replies || []), newReply],
+        }
+        : prev
+    );
 
-      setMentions((prev) => prev.map((m) => (m.id === selectedMessage.id ? { ...m, replies: [...(m.replies || []), reply] } : m)));
-      setSelectedMessage((prev) => (prev ? { ...prev, replies: [...(prev.replies || []), reply] } : prev));
-      setReplyText("");
-
-      alert("✅ Reply sent");
-    } catch (err) {
-      console.error("Reply error:", err.response?.data || err.message);
-      alert("❌ Failed to send reply.");
-    }
+    setReplyText(""); // clear input
   };
 
   // ---------------- Send DM ----------------
-  const handleSendDm = async () => {
+  const handleSendDm = () => {
     if (!selectedDm || !dmText.trim()) return;
 
-    try {
-      const formData = new FormData();
-      formData.append("page_id", selectedPage.id); 
-      formData.append("access_token", selectedPage.access_token); // ✅ Page token
-      formData.append("recipient_psid", selectedDm.userId);
-      formData.append("message_text", dmText.trim());
+    const newMessage = {
+      id: `dm_msg_${Date.now()}`,
+      text: dmText.trim(),
+      time: new Date().toISOString(),
+      sender: "You",
+      isMe: true,
+    };
 
-      await axios.post("http://localhost:8000/facebook/message/send", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      const newMessage = {
-        id: `dm_msg_${Date.now()}`,
-        text: dmText.trim(),
-        time: new Date().toISOString(),
-        sender: "You",
-        isMe: true,
-      };
-
-      setDms((prev) =>
-        prev.map((dm) =>
-          dm.id === selectedDm.id
-            ? {
-              ...dm,
-              messages: [...dm.messages, newMessage],
-              lastMessage: dmText.trim(),
-              time: new Date().toISOString(),
-            }
-            : dm
-        )
-      );
-
-      setSelectedDm((prev) =>
-        prev
+    // Update the DM list
+    setDms((prev) =>
+      prev.map((dm) =>
+        dm.id === selectedDm.id
           ? {
-            ...prev,
-            messages: [...prev.messages, newMessage],
+            ...dm,
+            messages: [...dm.messages, newMessage],
             lastMessage: dmText.trim(),
             time: new Date().toISOString(),
           }
-          : prev
-      );
+          : dm
+      )
+    );
 
-      setDmText("");
-      alert("✅ Message sent");
-    } catch (err) {
-      console.error("Send DM error:", err.response?.data || err.message);
-      alert("❌ Failed to send message.");
-    }
+    // Update the currently open DM
+    setSelectedDm((prev) =>
+      prev
+        ? {
+          ...prev,
+          messages: [...prev.messages, newMessage],
+          lastMessage: dmText.trim(),
+          time: new Date().toISOString(),
+        }
+        : prev
+    );
+
+    setDmText("");
   };
 
   const handleDmClick = async (dm) => {

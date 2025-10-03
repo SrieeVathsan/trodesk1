@@ -6267,3 +6267,11 @@
 {"asctime": "2025-09-30 16:07:26,888", "levelname": "INFO", "name": "app", "message": "Successfully fetched Instagram mentions"}
 {"asctime": "2025-09-30 16:07:26,894", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
 {"asctime": "2025-09-30 16:07:26,959", "levelname": "INFO", "name": "app", "message": "Found 16 unreplied mentions"}
+{"asctime": "2025-10-03 12:39:55,391", "levelname": "INFO", "name": "app", "message": "No tickets to raise"}
+{"asctime": "2025-10-03 12:39:55,471", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 123 not found"}
+{"asctime": "2025-10-03 12:39:55,594", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 456 not found"}
+{"asctime": "2025-10-03 12:39:55,673", "levelname": "WARNING", "name": "app", "message": "MentionPost with id 789 not found"}
+{"asctime": "2025-10-03 12:39:55,890", "levelname": "ERROR", "name": "app", "message": "Error fetching Facebook mentions: 500: 400: Error validating access token: The session is invalid because the user logged out."}
+{"asctime": "2025-10-03 12:39:55,890", "levelname": "ERROR", "name": "app", "message": "Error fetching Instagram mentions: 500: Failed to fetch mentions: 400: Error validating access token: The session is invalid because the user logged out."}
+{"asctime": "2025-10-03 12:39:55,900", "levelname": "INFO", "name": "app", "message": "Successfully fetched X mentions"}
+{"asctime": "2025-10-03 12:39:55,955", "levelname": "INFO", "name": "app", "message": "Found 16 unreplied mentions"}

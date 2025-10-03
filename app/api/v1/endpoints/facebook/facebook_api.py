@@ -8,6 +8,7 @@ from app.core.logger import app_logger
 from app.db.session import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Form
+from fastapi import Query
 from app.services.facebook_service import reply_to_post
 
 router=APIRouter(tags=["Facebook"])
