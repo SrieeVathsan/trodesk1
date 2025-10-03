@@ -54,3 +54,6 @@ coverage/
 
 # Netlify
 .netlify/
+__pycache__
+keyForMe.pem
+.vercel

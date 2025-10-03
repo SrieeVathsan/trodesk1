@@ -37,6 +37,7 @@ const App = () => {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [postContent, setPostContent] = useState("");
   const [fbUser, setFbUser] = useState(null);
+  const [igUserId, setIgUserId] = useState(null);
   const [fbReady, setFbReady] = useState(false);
   const [fbStatus, setFbStatus] = useState("unknown");
   const [saving, setSaving] = useState(false);
@@ -359,6 +360,54 @@ const App = () => {
     }
   }, [selectedPage, fetchDms]);
 
+
+  // ---------------- Fetch IG Business Account ----------------
+  const fetchIgBusinessAccount = useCallback(async (pageId, pageAccessToken) => {
+    try {
+      const res = await axios.get("http://localhost:8000/instagram/business-account", {
+        params: {
+          page_id: pageId,
+          page_access_token: pageAccessToken,
+        },
+      });
+
+      console.log("✅ IG Business Account:", res.data);
+
+      if (res.data?.ig_user_id) {
+        setIgUserId(res.data.ig_user_id); // ✅ Save IG User ID
+      }
+
+      return res.data;
+    } catch (err) {
+      console.error("❌ Fetch IG Business Account error:", err.response?.data || err.message);
+      alert("Failed to fetch Instagram Business Account.");
+      return null;
+    }
+  }, []);
+
+  // ---------------- Fetch IG Mentions ----------------
+  const fetchIgMentions = useCallback(async (accessToken, userId) => {
+    if (!accessToken || !userId) {
+      console.warn("⚠️ Missing IG access token or user ID");
+      return;
+    }
+
+    try {
+      const res = await axios.get("http://localhost:8000/instagram/mentions", {
+        params: {
+          access_token: accessToken,
+          ig_user_id: userId,
+        },
+      });
+
+      console.log("✅ IG Mentions:", res.data);
+      return res.data;
+    } catch (err) {
+      console.error("❌ Fetch IG Mentions error:", err.response?.data || err.message);
+      return null;
+    }
+  }, []);
+
   // // ---------------- Fetch Posts ----------------
   // const fetchPosts = useCallback(async () => {
   //   if (!fbUser?.accessToken) {
@@ -417,14 +466,49 @@ const App = () => {
 
   // ---------------- Auto Fetch Data After Login ----------------
   useEffect(() => {
-    if (fbUser) {
+    if (fbUser && pages.length > 0) {
       console.log("👤 fbUser set, fetching data...");
       fetchAllMentions();
       fetchDms();
-      // fetchPosts();
       fetchPages();
+
+      // ✅ Auto-fetch IG Business Account + Mentions for first Page
+      const firstPage = pages[0];
+      if (firstPage?.id && firstPage?.access_token) {
+        fetchIgBusinessAccount(firstPage.id, firstPage.access_token).then((igAcc) => {
+          if (igAcc?.ig_user_id) {
+            fetchIgMentions(firstPage.access_token, igAcc.ig_user_id).then((mentions) => {
+              if (mentions?.data) {
+                setMentions((prev) => [
+                  ...prev,
+                  ...mentions.data.map((m, i) => ({
+                    platform: "Instagram",
+                    id: m.id || `ig_${i}`,
+                    message: m.caption || "",
+                    content: m.caption || "",
+                    time: m.timestamp || new Date().toISOString(),
+                    mediaId: m.id,
+                    username: m.username || "Instagram User",
+                    mediaUrl: m.media_url || "",
+                    permalink: m.permalink || "",
+                    replies: [],
+                  })),
+                ]);
+              }
+            });
+          }
+        });
+      }
     }
-  }, [fbUser, fetchAllMentions, fetchPages, fetchDms]);
+  }, [
+    fbUser,
+    pages,
+    fetchAllMentions,
+    fetchPages,
+    fetchDms,
+    fetchIgBusinessAccount,
+    fetchIgMentions,
+  ]);
 
   // ---------------- Reply to mention ----------------
   const handleReply = () => {
@@ -861,6 +945,13 @@ const App = () => {
                 {loading ? "Loading..." : "Refresh"}
               </button>
             </div>
+
+            {/* ✅ Show IG User ID here */}
+            {igUserId && (
+              <div style={{ fontSize: 12, color: darkMode ? "#9aa7c7" : "#374151", marginBottom: 8 }}>
+                ✅ Linked Instagram ID: <strong>{igUserId}</strong>
+              </div>
+            )}
 
             {/* {activeTab === "mentions" && (
               <>
