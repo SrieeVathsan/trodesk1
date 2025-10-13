@@ -1,0 +1,10 @@
+[[redirects]]
+  from = "/api/*"
+  to = "http://ec2-54-196-247-34.compute-1.amazonaws.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

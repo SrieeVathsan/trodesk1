@@ -57,3 +57,5 @@ coverage/
 __pycache__
 keyForMe.pem
 .vercel
+
+node_modules/
