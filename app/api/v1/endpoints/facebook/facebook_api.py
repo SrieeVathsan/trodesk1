@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from app.core.config import GRAPH,FB_PAGE_ID,PAGE_ACCESS_TOKEN
 from fastapi import Depends, File, HTTPException,APIRouter, Query, UploadFile
 from httpx import AsyncClient
-from app.services.facebook_service import create_fb_post, get_fb_mentions,get_fb_posts,reply_in_private
+from app.services.facebook_service import create_fb_post, get_fb_mentions,get_fb_posts,reply_in_private, edit_fb_post, delete_fb_post
 from app.core.logger import app_logger
 from app.db.session import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -184,3 +184,40 @@ async def send_facebook_dm(
             error_msg = data.get("error", {}).get("message", str(data))
             raise HTTPException(status_code=resp.status_code, detail=error_msg)
     return {"success": True, "data": data}
+
+
+@router.put("/facebook/posts/{post_id}")
+async def edit_facebook_post(
+    post_id: str,
+    new_message: str = Form(...),
+    access_token: Optional[str] = Form(None),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Endpoint to edit a Facebook post.
+    """
+    try:
+        return await edit_fb_post(db=db, post_id=post_id, new_message=new_message, access_token=access_token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        app_logger.info(f"Error while editing Facebook post {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/facebook/posts/{post_id}")
+async def delete_facebook_post(
+    post_id: str,
+    access_token: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Endpoint to delete a Facebook post.
+    """
+    try:
+        return await delete_fb_post(db=db, post_id=post_id, access_token=access_token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        app_logger.info(f"Error while deleting Facebook post {e}")
+        raise HTTPException(status_code=500, detail=str(e))

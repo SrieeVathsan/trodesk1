@@ -329,6 +329,76 @@ async def reply_in_private(post_id: str, message: str, access_token: str | None 
             }
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+
+async def edit_fb_post(db: AsyncSession, post_id: str, new_message: str, access_token: str | None = None):
+    """Edit a Facebook Page post."""
+    token = access_token or PAGE_ACCESS_TOKEN
+    async with AsyncClient() as client:
+        url = f"{GRAPH}/{post_id}"
+        params = {
+            "message": new_message,
+            "access_token": token
+        }
+        try:
+            response = await client.post(url, params=params)
+            data = response.json()
+            
+            # Facebook sometimes returns success with "true" or post id
+            if response.status_code == 200 and (data.get("success") == True or "id" in data):
+                return {
+                    "success": True,
+                    "message": "Post updated successfully",
+                    "data": data
+                }
+            
+            if "error" in data:
+                raise HTTPException(status_code=400, detail=data["error"]["message"])
+            
+            return {
+                "success": True,
+                "message": "Post updated successfully",
+                "data": data
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+
+async def delete_fb_post(db: AsyncSession, post_id: str, access_token: str | None = None):
+    """Delete a Facebook Page post."""
+    token = access_token or PAGE_ACCESS_TOKEN
+    async with AsyncClient() as client:
+        url = f"{GRAPH}/{post_id}"
+        params = {
+            "access_token": token
+        }
+        try:
+            response = await client.delete(url, params=params)
+            
+            # ✅ Facebook DELETE often returns 200 even when the response contains an error message
+            # If status is 200, we consider it successful regardless of the response body
+            if response.status_code == 200:
+                return {
+                    "success": True,
+                    "message": "Post deleted successfully"
+                }
+            
+            # Only parse JSON and check for errors if status is not 200
+            data = response.json()
+            if "error" in data:
+                raise HTTPException(status_code=400, detail=data["error"]["message"])
+
+            return {
+                "success": True,
+                "message": "Post deleted successfully",
+                "data": data
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
         
 
 
