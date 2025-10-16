@@ -41,7 +41,7 @@ const SignupForm = () => {
 
     try {
       const response = await axios.post(
-        "/api/auth/signup",
+        "http://127.0.0.1:8000/auth/signup",
         {
           email: formData.email,
           password: formData.password,

@@ -14,6 +14,7 @@ import {
   Mail,
   LogOut,
 } from "lucide-react";
+import { IoArrowBackCircleOutline } from "react-icons/io5";
 import axios from "axios";
 import logo from "../assets/logo.png";
 // import "./App.css";
@@ -51,6 +52,9 @@ const Dashboard = () => {
 
 const [fbPageId, setFbPageId] = useState(null);
 const [fbInstagramId, setFbInstagramId] = useState(null);
+const [selectedPlatform, setSelectedPlatform] = useState(null); // "instagram" | "facebook" | null
+
+
 
 
   useEffect(() => {
@@ -218,7 +222,7 @@ const fetchAllMentions = useCallback(async () => {
 
   setLoading(true);
   try {
-    const res = await axios.get("/api/all/mentions", {
+    const res = await axios.get("http://127.0.0.1:8000/all/mentions", {
      params: {
     access_token: pageAccessToken, // ✅ correct key
     page_id: pageId,
@@ -292,6 +296,90 @@ const fetchAllMentions = useCallback(async () => {
   }
 }, [fbUser, fbPageId, fbInstagramId]);
 
+//-----------Mentions-----------------//
+
+const fetchPlatformMentions = useCallback(
+  async (platform) => {
+    const pageId = fbPageId || localStorage.getItem("fbPageId");
+    const igUserId = fbInstagramId || localStorage.getItem("fbInstagramId");
+    const accessToken = localStorage.getItem("fbAccessToken");
+
+    if (!fbUser) {
+      alert("Please login first to view mentions");
+      return;
+    }
+
+    if (!accessToken) {
+      console.warn("⚠️ Missing access token");
+      return;
+    }
+
+    setLoading(true);
+    console.log(`🔍 Fetching ${platform} mentions...`);
+
+    try {
+      let res;
+      if (platform === "facebook") {
+        // 🟦 Facebook API
+        res = await axios.get("http://127.0.0.1:8000/facebook/mentions", {
+          params: { access_token: accessToken, page_id: pageId },
+        });
+      } else if (platform === "instagram") {
+        // 🟣 Instagram API
+        res = await axios.get("http://127.0.0.1:8000/instagram/mentions", {
+          params: { access_token: accessToken, ig_user_id: igUserId },
+        });
+      } else {
+        console.warn("❌ Unsupported platform:", platform);
+        return;
+      }
+
+      const data = res.data || {};
+      console.log(`📥 Raw ${platform} mentions:`, data);
+
+      const formattedMentions = [];
+
+      if (platform === "facebook" && Array.isArray(data.data)) {
+        formattedMentions.push(
+          ...data.data.map((item, i) => ({
+            platform: "facebook",
+            id: item.id || `fb_m_${i}`,
+            message: item.message || item.text || "",
+            time: item.created_time || new Date().toISOString(),
+            username: item.from?.name || "Facebook User",
+            avatar: item.from?.picture?.data?.url || "",
+            permalink: item.permalink_url || "",
+          }))
+        );
+      }
+
+      if (platform === "instagram" && Array.isArray(data.data)) {
+        formattedMentions.push(
+          ...data.data.map((item, i) => ({
+            platform: "instagram",
+            id: item.id || `ig_m_${i}`,
+            message: item.caption || "",
+            time: item.timestamp || new Date().toISOString(),
+            username: item.username || "Instagram User",
+            avatar: item.profile_picture_url || "",
+            permalink: item.permalink || "",
+          }))
+        );
+      }
+
+      console.log(`✅ Parsed ${platform} mentions:`, formattedMentions);
+      setMentions(formattedMentions);
+    } catch (err) {
+      console.error(`❌ Fetch ${platform} mentions error:`, err);
+      setMentions([]);
+    } finally {
+      setLoading(false);
+    }
+  },
+  [fbUser, fbPageId, fbInstagramId]
+);
+
+
 
 
   // ---------------- Fetch DMs ----------------
@@ -314,7 +402,7 @@ const fetchAllMentions = useCallback(async () => {
 
     setLoading(true);
     try {
-      const res = await axios.get("/api/facebook/conversations", {
+      const res = await axios.get("http://127.0.0.1:8000/facebook/conversations", {
         params: { page_id: pageId, access_token: pageAccessToken },
       });
 
@@ -459,7 +547,7 @@ const fetchAllMentions = useCallback(async () => {
 
     setLoading(true);
     try {
-      const res = await axios.get("/api/facebook/posts", {
+      const res = await axios.get("http://127.0.0.1:8000/facebook/posts", {
         params: {
           page_id: pageId,
           access_token: pageAccessToken,
@@ -512,11 +600,108 @@ const fetchAllMentions = useCallback(async () => {
   }, [fbUser]);
 
   // ✅ Fetch posts when posts tab is clicked
-  useEffect(() => {
-    if (activeTab === "posts" && fbUser) {
-      fetchPosts();
+  // useEffect(() => {
+  //   if (activeTab === "posts" && fbUser) {
+  //     fetchPosts();
+  //   }
+  // }, [activeTab, fbUser, fetchPosts]);
+
+  //------------------Post--------------//
+
+  const fetchPlatformPosts = useCallback(
+  async (platform) => {
+    const pageId = fbPageId || localStorage.getItem("fbPageId");
+    const igUserId = fbInstagramId || localStorage.getItem("fbInstagramId");
+    const accessToken = localStorage.getItem("fbAccessToken");
+
+    if (!fbUser) {
+      alert("Please login first to view posts");
+      return;
     }
-  }, [activeTab, fbUser, fetchPosts]);
+
+    if (!accessToken) {
+      console.warn("⚠️ Missing access token");
+      return;
+    }
+
+    setLoading(true);
+    console.log(`🔍 Fetching ${platform} posts...`);
+
+    try {
+      let res;
+      if (platform === "facebook") {
+        // 🟦 Facebook posts API
+        res = await axios.get("http://127.0.0.1:8000/facebook/posts", {
+          params: { access_token: accessToken, page_id: pageId },
+        });
+      } else if (platform === "instagram") {
+        // 🟣 Instagram posts API
+        res = await axios.get("http://127.0.0.1:8000/instagram/posts", {
+          params: { access_token: accessToken, ig_user_id: igUserId },
+        });
+      } else {
+        console.warn("❌ Unsupported platform:", platform);
+        return;
+      }
+
+      const data = res.data?.data || res.data?.posts || [];
+      console.log(`📥 Raw ${platform} posts:`, data);
+
+      const formattedPosts = [];
+
+      // 🟦 Facebook post formatting
+      if (platform === "facebook" && Array.isArray(data)) {
+        formattedPosts.push(
+          ...data.map((item, i) => ({
+            platform: "facebook",
+            id: item.id || `fb_p_${i}`,
+            caption: item.message?.split("\n")[0] || "(no caption)",
+            content: item.message || "",
+            time: item.created_time || new Date().toISOString(),
+            username: item.from?.name || "Facebook User",
+            avatar: item.from?.picture?.data?.url || "",
+            mediaUrl: item.full_picture || "",
+            permalink: item.permalink_url || "",
+          }))
+        );
+      }
+
+      // 🟣 Instagram post formatting
+      if (platform === "instagram" && Array.isArray(data)) {
+        formattedPosts.push(
+          ...data.map((item, i) => ({
+            platform: "instagram",
+            id: item.id || `ig_p_${i}`,
+            caption: item.caption?.split("\n")[0] || "(no caption)",
+            content: item.caption || "",
+            time: item.timestamp || new Date().toISOString(),
+            username: item.username || "Instagram User",
+            avatar: item.profile_picture_url || "", // optional, may not exist
+            mediaUrl: item.media_url || "",
+            permalink: item.permalink || "",
+          }))
+        );
+      }
+
+      console.log(`✅ Parsed ${platform} posts:`, formattedPosts);
+      setPosts(formattedPosts);
+    } catch (err) {
+      console.error(`❌ Fetch ${platform} posts error:`, err);
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
+  },
+  [fbUser, fbPageId, fbInstagramId]
+);
+
+useEffect(() => {
+  if (activeTab === "posts" && fbUser && selectedPlatform) {
+    fetchPlatformPosts(selectedPlatform);
+  }
+}, [activeTab, fbUser, selectedPlatform, fetchPlatformPosts]);
+
+
 
   // --- fetch pages ---
  const fetchPages = useCallback(async () => {
@@ -668,142 +853,109 @@ useEffect(() => {
 
 
   // ---------------- Reply to mention ----------------
-  const handleReply = async () => {
-    if (!selectedMessage || !replyText.trim()) return;
+const handleReply = async () => {
+  if (!selectedMessage || !replyText.trim()) return;
 
-    const accessToken = localStorage.getItem("fbAccessToken");
-    
-    if (!accessToken) {
-      alert("⚠️ Access token not found. Please login again.");
-      return;
-    }
+  const accessToken = localStorage.getItem("fbAccessToken");
 
-    // ✅ SMOOTH Reply: Optimistic UI update - Add reply immediately
-    const newReply = {
-      id: `r_${Date.now()}`,
-      text: replyText.trim(),
-      time: new Date().toISOString(),
-      author: "You",
-      isMe: true,
-      sending: true, // ✅ Mark as sending for visual feedback
-    };
+  if (!accessToken) {
+    alert("⚠️ Access token not found. Please login again.");
+    return;
+  }
 
-    const replyMessage = replyText.trim();
-    setReplyText(""); // Clear input immediately
+  // ✅ Optimistic UI: Show the reply immediately
+  const newReply = {
+    id: `r_${Date.now()}`,
+    text: replyText.trim(),
+    time: new Date().toISOString(),
+    author: "You",
+    isMe: true,
+    sending: true,
+  };
 
-    // ✅ SMOOTH Update: Update both mentions list AND currently selected mention instantly
-    setMentions((prev) =>
-      prev.map((m) =>
-        m.id === selectedMessage.id
-          ? {
-              ...m,
-              replies: [...(m.replies || []), newReply],
-            }
-          : m
-      )
-    );
+  const replyMessage = replyText.trim();
+  setReplyText("");
 
-    setSelectedMessage((prev) =>
-      prev
-        ? {
-            ...prev,
-            replies: [...(prev.replies || []), newReply],
-          }
-        : prev
-    );
+  setMentions((prev) =>
+    prev.map((m) =>
+      m.id === selectedMessage.id
+        ? { ...m, replies: [...(m.replies || []), newReply] }
+        : m
+    )
+  );
 
-    try {
-      let response;
-      
-      // ✅ Check platform and call appropriate backend API
-      if (selectedMessage.platform === "Instagram") {
-        console.log("🔍 Sending Instagram reply with:", {
+  setSelectedMessage((prev) =>
+    prev ? { ...prev, replies: [...(prev.replies || []), newReply] } : prev
+  );
+
+  try {
+    let response;
+
+    if (selectedMessage.platform === "Instagram") {
+      console.log("🔍 Sending Instagram reply with:", {
+        media_id: selectedMessage.id,
+        comment_text: replyMessage,
+        access_token: accessToken ? accessToken.slice(0, 10) + "..." : null,
+      });
+
+      // ✅ send JSON body + query param for token
+      response = await axios.post(
+        "http://127.0.0.1:8000/instagram/reply-to-mentions",
+        {
           media_id: selectedMessage.id,
           comment_text: replyMessage,
-          access_token: accessToken ? accessToken.slice(0, 10) + "..." : null,
-        });
+        },
+        {
+          params: { access_token: accessToken },
+        }
+      );
 
-        response = await axios.post(
-          "/api/instagram/reply-to-mentions",
-          null,
-          {
-            params: {
-              media_id: selectedMessage.id,
-              comment_text: replyMessage,
-              access_token: accessToken,
-            },
-          }
-        );
+      console.log("✅ Instagram reply sent:", response.data);
+    } 
+    else if (selectedMessage.platform === "Facebook") {
+      console.log("🔍 Sending Facebook reply with:", {
+        post_id: selectedMessage.id,
+        message: replyMessage,
+        access_token: accessToken ? accessToken.slice(0, 10) + "..." : null,
+      });
 
-        console.log("✅ Instagram reply sent:", response.data);
-      } else if (selectedMessage.platform === "Facebook") {
-        console.log("🔍 Sending Facebook reply with:", {
+      response = await axios.post(
+        "http://127.0.0.1:8000/facebook/sent_private",
+        {
           post_id: selectedMessage.id,
           message: replyMessage,
-          access_token: accessToken ? accessToken.slice(0, 10) + "..." : null,
-        });
+        },
+        {
+          params: { access_token: accessToken },
+        }
+      );
 
-        response = await axios.post(
-          "/api/facebook/sent_private",
-          null,
-          {
-            params: {
-              post_id: selectedMessage.id,
-              message: replyMessage,
-              access_token: accessToken,
-            },
-          }
-        );
+      console.log("✅ Facebook reply sent:", response.data);
+    } 
+    else if (selectedMessage.platform === "X") {
+      alert("⚠️ X/Twitter reply feature coming soon!");
+      throw new Error("X platform not implemented yet");
+    }
 
-        console.log("✅ Facebook reply sent:", response.data);
-      } else if (selectedMessage.platform === "X") {
-        alert("⚠️ X/Twitter reply feature coming soon!");
-        throw new Error("X platform not implemented yet");
-      }
+    // ✅ SUCCESS — confirm UI
+    if (response?.data?.success || response?.status === 200) {
+      const confirmedReply = {
+        ...newReply,
+        sending: false,
+        id:
+          response.data?.response?.id ||
+          response.data?.data?.id ||
+          newReply.id,
+      };
 
-      // ✅ SUCCESS: Remove sending state and confirm reply
-      if (response?.data.success) {
-        const confirmedReply = {
-          ...newReply,
-          sending: false,
-          id: response.data.response?.id || response.data.data?.id || newReply.id,
-        };
-
-        // Update with confirmed reply
-        setMentions((prev) =>
-          prev.map((m) =>
-            m.id === selectedMessage.id
-              ? {
-                  ...m,
-                  replies: m.replies.map(r => r.id === newReply.id ? confirmedReply : r),
-                }
-              : m
-          )
-        );
-
-        setSelectedMessage((prev) =>
-          prev
-            ? {
-                ...prev,
-                replies: prev.replies.map(r => r.id === newReply.id ? confirmedReply : r),
-              }
-            : prev
-        );
-
-        console.log("✅ Reply confirmed and UI updated smoothly");
-      } else {
-        throw new Error(response?.data?.error || "Reply failed");
-      }
-    } catch (err) {
-      console.error("❌ Error sending reply:", err);
-      
-      // ❌ FAILED: Smoothly revert UI changes
       setMentions((prev) =>
         prev.map((m) =>
           m.id === selectedMessage.id
             ? {
                 ...m,
-                replies: m.replies.filter(r => r.id !== newReply.id),
+                replies: m.replies.map((r) =>
+                  r.id === newReply.id ? confirmedReply : r
+                ),
               }
             : m
         )
@@ -813,16 +965,47 @@ useEffect(() => {
         prev
           ? {
               ...prev,
-              replies: prev.replies.filter(r => r.id !== newReply.id),
+              replies: prev.replies.map((r) =>
+                r.id === newReply.id ? confirmedReply : r
+              ),
             }
           : prev
       );
 
-      setReplyText(replyMessage); // Restore the reply text
-      const errorMsg = err.response?.data?.detail || err.message || "Failed to send reply";
-      alert(`❌ Error: ${errorMsg}`);
+      console.log("✅ Reply confirmed and UI updated smoothly");
+    } else {
+      throw new Error(response?.data?.error || "Reply failed");
     }
-  };
+  } catch (err) {
+    console.error("❌ Error sending reply:", err);
+
+    // ❌ revert optimistic update
+    setMentions((prev) =>
+      prev.map((m) =>
+        m.id === selectedMessage.id
+          ? {
+              ...m,
+              replies: m.replies.filter((r) => r.id !== newReply.id),
+            }
+          : m
+      )
+    );
+
+    setSelectedMessage((prev) =>
+      prev
+        ? {
+            ...prev,
+            replies: prev.replies.filter((r) => r.id !== newReply.id),
+          }
+        : prev
+    );
+
+    setReplyText(replyMessage);
+    const errorMsg = err.response?.data?.detail || err.message || "Failed to send reply";
+    alert(`❌ Error: ${errorMsg}`);
+  }
+};
+
 
   // ---------------- Send DM ----------------
   const handleSendDm = async () => {
@@ -894,22 +1077,27 @@ useEffect(() => {
       }
     }, 50);
 
-    try {
-      // ✅ Call backend API to send Facebook message
-      const response = await axios.post(
-        "/api/facebook/message/send",
-        null,
-        {
-          params: {
-            page_id: pageId,
-            recipient_id: recipientId,
-            message_text: messageText,
-            access_token: pageAccessToken,
-          },
-        }
-      );
+try {
+  // ✅ Prepare form data
+  const formData = new FormData();
+  formData.append("page_id", pageId);
+  formData.append("access_token", pageAccessToken);
+  formData.append("recipient_psid", recipientId); // must match backend param name!
+  formData.append("message_text", messageText);
 
-      console.log("✅ Facebook DM sent:", response.data);
+  // ✅ POST request
+  const response = await axios.post(
+    "http://127.0.0.1:8000/facebook/message/send",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  console.log("✅ Facebook DM sent:", response.data);
+
 
       if (response.data.success) {
         // ✅ Update the message ID with the real one from backend
@@ -1083,7 +1271,7 @@ const handleMakePost = async () => {
 
     // ✅ Make POST request
     const res = await axios.post(
-      "/api/facebook/posts",
+      "http://127.0.0.1:8000/facebook/posts",
       formData,
       {
         headers: {
@@ -1159,7 +1347,7 @@ const handleFBLogin = () => {
               localStorage.setItem("fbUser", JSON.stringify(userData));
 
               // ✅ Send user info + token to backend
-              axios.post("/api/facebook/auth", {
+              axios.post("http://127.0.0.1:8000/facebook/auth", {
                 access_token: accessToken,
                 user_id: userInfo.id,
                 name: userInfo.name,
@@ -1181,7 +1369,7 @@ const handleFBLogin = () => {
 
                  fetchAllMentions();
 
-                alert(`✅ Logged in successfully!\nPage ID: ${page_id}\nInstagram ID: ${instagram_business_id ?? "N/A"}`);
+                alert(`✅ Logged in successfully!`);  //-------------\nPage ID: ${page_id}\nInstagram ID: ${instagram_business_id ?? "N/A"}
               })
               .catch((err) => {
                 console.error("❌ Backend sync error:", err);
@@ -1226,7 +1414,7 @@ const handleFBLogin = () => {
 
   const handleLogoutbutton = async () => {
     try {
-      const res = await axios.post("/api/auth/logout", {}, {
+      const res = await axios.post("http://127.0.0.1:8000/auth/logout", {}, {
         withCredentials: true, // Important: include cookies
       });
       if (res.data.success) {
@@ -1387,12 +1575,20 @@ const handleFBLogin = () => {
                   activeTab === "dms" ? "Direct Messages" :
                     "Posts"}
               </h3>
-              <button
+              {/* <button
                 onClick={() => {
-                  if (activeTab === "mentions") fetchAllMentions();
-                  // else if (activeTab === "posts") fetchPosts();
-                  else if (activeTab === "dms") fetchDms();
-                  // else fetchPosts();
+                  // 🟦 Refresh only when user manually clicks the button
+                  if (activeTab === "mentions") {
+                    // 🔹 Only refresh if a platform is selected
+                    if (selectedPlatform) {
+                      fetchPlatformMentions(selectedPlatform);
+                    } else {
+                      alert("⚠️ Please select a platform first.");
+                    }
+                  } else if (activeTab === "dms") {
+                    // 🔹 Refresh DMs only when Refresh button is clicked
+                    fetchDms();
+                  }
                 }}
                 style={{
                   padding: "6px 10px",
@@ -1404,7 +1600,8 @@ const handleFBLogin = () => {
                 }}
               >
                 {loading ? "Loading..." : "Refresh"}
-              </button>
+              </button> */}
+
             </div>
 
             {/* ✅ Show IG User ID here */}
@@ -1484,380 +1681,786 @@ const handleFBLogin = () => {
               </>
             )} */}
 
-            {activeTab === "mentions" && (
-              <>
-                {!fbUser ? (
-                  // 🚫 Login required
-                  <div
+{activeTab === "mentions" && (
+  <>
+    {!selectedPlatform ? (
+      // 🌐 Step 1: Platform Selector
+      <div style={{ marginBottom: 16, textAlign: "center", marginTop: 30 }}>
+        <div
+          className="platform-select"
+          style={{ display: "flex", gap: 12, justifyContent: "center" }}
+        >
+          {/* Instagram Button */}
+          <button
+            onClick={() => {
+              setSelectedPlatform("instagram");
+              fetchPlatformMentions("instagram"); // fetch mentions immediately
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              background: darkMode ? "#1f2937" : "#fff",
+              color: darkMode ? "#f9fafb" : "#111827",
+              border: "1px solid #d1d5db",
+              borderRadius: 8,
+              padding: "10px 16px",
+              cursor: "pointer",
+              boxShadow: darkMode
+                ? "0 2px 6px rgba(0,0,0,0.3)"
+                : "0 2px 6px rgba(0,0,0,0.1)",
+              transition: "background 0.2s ease, transform 0.2s ease",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = darkMode
+                ? "#374151"
+                : "#f3f4f6")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = darkMode
+                ? "#1f2937"
+                : "#fff")
+            }
+          >
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png"
+              alt="Instagram"
+              width={24}
+              height={24}
+            />
+            Instagram
+          </button>
+
+          {/* Facebook Button */}
+          <button
+            onClick={() => {
+              setSelectedPlatform("facebook");
+              fetchPlatformMentions("facebook"); // fetch mentions immediately
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              background: darkMode ? "#1f2937" : "#fff",
+              color: darkMode ? "#f9fafb" : "#111827",
+              border: "1px solid #d1d5db",
+              borderRadius: 8,
+              padding: "10px 16px",
+              cursor: "pointer",
+              boxShadow: darkMode
+                ? "0 2px 6px rgba(0,0,0,0.3)"
+                : "0 2px 6px rgba(0,0,0,0.1)",
+              transition: "background 0.2s ease, transform 0.2s ease",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = darkMode
+                ? "#374151"
+                : "#f3f4f6")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = darkMode
+                ? "#1f2937"
+                : "#fff")
+            }
+          >
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/4/44/Facebook_Logo.png"
+              alt="Facebook"
+              width={24}
+              height={24}
+            />
+            Facebook
+          </button>
+        </div>
+      </div>
+    ) : (
+      // 🟢 Step 2: Show Mentions for Selected Platform
+      <>
+        {/* Top Bar with Back + Refresh */}
+        <div
+          style={{
+            padding: "10px 20px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <button
+            onClick={() => setSelectedPlatform(null)}
+            style={{
+              background: "none",
+              border: "none",
+              color: darkMode ? "#9aa7c7" : "#0b1c3a",
+              cursor: "pointer",
+              fontSize: 14,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            ← Back
+          </button>
+
+          {/* ✅ Refresh button now inside platform section */}
+          <button
+            onClick={() => fetchPlatformMentions(selectedPlatform)}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 8,
+              border: "none",
+              background: "#006CFC",
+              color: "#fff",
+              cursor: "pointer",
+              fontSize: 14,
+            }}
+          >
+            {loading ? "Loading..." : "Refresh"}
+          </button>
+        </div>
+
+        {/* Existing mention UI reused */}
+        {!fbUser ? (
+          <div
+            style={{
+              textAlign: "center",
+              paddingTop: 30,
+              color: darkMode ? "#9aa7c7" : "#6b7280",
+            }}
+          >
+            <MessageSquare
+              style={{ width: 48, height: 48, margin: "0 auto 12px" }}
+            />
+            <div>Please login to view {selectedPlatform} mentions</div>
+            <div style={{ fontSize: 13, marginTop: 6 }}>
+              Click the login button above
+            </div>
+          </div>
+        ) : loading ? (
+          <div
+            style={{
+              textAlign: "center",
+              paddingTop: 30,
+              color: darkMode ? "#9aa7c7" : "#6b7280",
+            }}
+          >
+            <MessageSquare
+              style={{ width: 48, height: 48, margin: "0 auto 12px" }}
+            />
+            <div>Loading {selectedPlatform} mentions...</div>
+          </div>
+        ) : mentions.filter((m) => m.platform === selectedPlatform).length ===
+          0 ? (
+          <div
+            style={{
+              textAlign: "center",
+              paddingTop: 30,
+              color: darkMode ? "#9aa7c7" : "#6b7280",
+            }}
+          >
+            <MessageSquare
+              style={{ width: 48, height: 48, margin: "0 auto 12px" }}
+            />
+            <div>No {selectedPlatform} mentions yet</div>
+            <div style={{ fontSize: 13, marginTop: 6 }}>
+              If you expected data, check Graph API permissions in backend.
+            </div>
+          </div>
+        ) : (
+          mentions
+            .filter((m) => m.platform === selectedPlatform)
+            .map((m) => (
+              <div
+                key={m.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedMessage(m)}
+                onKeyDown={(e) =>
+                  (e.key === "Enter" || e.key === " ") && setSelectedMessage(m)
+                }
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: 12,
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  marginBottom: 10,
+                  background:
+                    selectedMessage?.id === m.id
+                      ? "#006CFC"
+                      : darkMode
+                      ? "#0b1a2b"
+                      : "#eef7ff",
+                  color:
+                    selectedMessage?.id === m.id
+                      ? "#fff"
+                      : darkMode
+                      ? "#e6eefc"
+                      : "#0b1c3a",
+                  transition: "background 0.2s ease",
+                }}
+              >
+                {m.avatar ? (
+                  <img
+                    src={m.avatar}
+                    alt={m.username}
                     style={{
-                      textAlign: "center",
-                      paddingTop: 30,
-                      color: darkMode ? "#9aa7c7" : "#6b7280",
+                      width: 44,
+                      height: 44,
+                      borderRadius: "50%",
+                      objectFit: "cover",
                     }}
-                  >
-                    <MessageSquare
-                      style={{ width: 48, height: 48, margin: "0 auto 12px" }}
-                    />
-                    <div>Please login to view mentions</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>
-                      Click the login button above
-                    </div>
-                  </div>
-                ) : loading ? (
-                  // ⏳ While fetching
-                  <div
-                    style={{
-                      textAlign: "center",
-                      paddingTop: 30,
-                      color: darkMode ? "#9aa7c7" : "#6b7280",
-                    }}
-                  >
-                    <MessageSquare
-                      style={{ width: 48, height: 48, margin: "0 auto 12px" }}
-                    />
-                    <div>Loading mentions...</div>
-                  </div>
-                ) : mentions.length === 0 ? (
-                  // 🟢 Logged in but no mentions
-                  <div
-                    style={{
-                      textAlign: "center",
-                      paddingTop: 30,
-                      color: darkMode ? "#9aa7c7" : "#6b7280",
-                    }}
-                  >
-                    <MessageSquare
-                      style={{ width: 48, height: 48, margin: "0 auto 12px" }}
-                    />
-                    <div>No mentions yet</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>
-                      If you expected data, check Graph API permissions in backend.
-                    </div>
-                  </div>
+                  />
                 ) : (
-                  // ✅ Logged in and mentions available
-                  mentions.map((m) => (
-                    <div
-                      key={m.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setSelectedMessage(m)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          setSelectedMessage(m);
-                        }
-                      }}
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: "50%",
+                      background: "#c7d9ff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {m.username ? m.username.charAt(0).toUpperCase() : "U"}
+                  </div>
+                )}
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <strong
                       style={{
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {m.username}
+                    </strong>
+                    <small
+                      style={{
+                        color: darkMode ? "#94a3b8" : "#6b7280",
+                        fontSize: 12,
+                        marginLeft: 8,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {m.time
+                        ? new Date(m.time).toLocaleString()
+                        : "Unknown"}
+                    </small>
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 6,
+                      fontSize: 14,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {m.message || m.content || m.text || "(no text)"}
+                  </div>
+                </div>
+              </div>
+            ))
+        )}
+      </>
+    )}
+  </>
+)}
+
+
+
+{activeTab === "dms" && (
+  <>
+    {!selectedPlatform ? (
+      // 🔹 PLATFORM SELECTION
+      <div style={{ marginBottom: 16, textAlign: "center" }}>
+        <div
+          className="platform-select"
+          style={{ display: "flex", gap: 12, justifyContent: "center" }}
+        >
+          <button
+            onClick={() => setSelectedPlatform("instagram")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              background: darkMode ? "#1f2937" : "#fff",
+              color: darkMode ? "#f9fafb" : "#111827",
+              border: "1px solid #d1d5db",
+              borderRadius: 8,
+              padding: "10px 16px",
+              cursor: "pointer",
+            }}
+          >
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png"
+              alt="Instagram"
+              width={24}
+              height={24}
+            />
+            Instagram
+          </button>
+
+          <button
+            onClick={() => setSelectedPlatform("facebook")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              background: darkMode ? "#1f2937" : "#fff",
+              color: darkMode ? "#f9fafb" : "#111827",
+              border: "1px solid #d1d5db",
+              borderRadius: 8,
+              padding: "10px 16px",
+              cursor: "pointer",
+            }}
+          >
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/4/44/Facebook_Logo.png"
+              alt="Facebook"
+              width={24}
+              height={24}
+            />
+            Facebook
+          </button>
+        </div>
+      </div>
+    ) : (
+      // 🔹 PLATFORM VIEW (Facebook or Instagram)
+      <div>
+        {/* 🔙 BACK + REFRESH BUTTONS */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 16,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              onClick={() => {
+                setSelectedPlatform(null);
+                setSelectedDm(null);
+                // retain selectedPage and token
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                color: darkMode ? "#60a5fa" : "#2563eb",
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: 14,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <IoArrowBackCircleOutline />
+              Back
+            </button>
+
+            <h3
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginLeft: 8,
+                marginBottom: 0,
+              }}
+            >
+              {selectedPlatform === "facebook" ? (
+                <>
+                  <img
+                    src="https://img.icons8.com/?size=96&id=20419&format=png"
+                    alt="Messenger"
+                    width={24}
+                    height={24}
+                  />
+                  Messenger
+                </>
+              ) : (
+                <>
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg"
+                    alt="Instagram"
+                    width={24}
+                    height={24}
+                  />
+                  Instagram Messages
+                </>
+              )}
+            </h3>
+          </div>
+
+          {/* ✅ Refresh Button */}
+          <button
+            onClick={() => fetchDms()}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 8,
+              border: "none",
+              background: "#006CFC",
+              color: "#fff",
+              cursor: "pointer",
+              fontSize: 14,
+              fontWeight: 500,
+            }}
+          >
+            {loading ? "Loading..." : "Refresh"}
+          </button>
+        </div>
+
+        {/* 🔽 PAGE SELECTOR */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
+            Select Page: *
+          </label>
+          <select
+            value={selectedPage?.id || ""}
+            onChange={(e) => {
+              const page = pages.find((p) => p.id === e.target.value);
+              if (page) {
+                localStorage.setItem(`page_token_${page.id}`, page.access_token);
+                setSelectedPage(page);
+              }
+            }}
+            style={{
+              width: "100%",
+              padding: "12px",
+              borderRadius: "8px",
+              border: "1px solid #d1d5db",
+              background: darkMode ? "#374151" : "#fff",
+              color: darkMode ? "#f3f4f6" : "#111827",
+            }}
+          >
+            <option value="">-- Select Page --</option>
+            {pages.map((page) => (
+              <option key={page.id} value={page.id}>
+                {page.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* 🔽 MESSAGE LIST */}
+        {!fbUser ? (
+          <div
+            style={{
+              textAlign: "center",
+              paddingTop: 30,
+              color: darkMode ? "#9aa7c7" : "#6b7280",
+            }}
+          >
+            <Mail style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
+            <div>Please login to view messages</div>
+            <div style={{ fontSize: 13, marginTop: 6 }}>
+              Click the login button above
+            </div>
+          </div>
+        ) : dms.length === 0 ? (
+          <div
+            style={{
+              textAlign: "center",
+              paddingTop: 30,
+              color: darkMode ? "#9aa7c7" : "#6b7280",
+            }}
+          >
+            <Mail style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
+            <div>No messages yet</div>
+            <div style={{ fontSize: 13, marginTop: 6 }}>
+              Select a page and click Refresh
+            </div>
+          </div>
+        ) : (
+          dms.map((dm) => (
+            <div
+              key={dm.id}
+              onClick={() => handleDmClick(dm)}
+              style={{
+                display: "flex",
+                gap: 10,
+                padding: 12,
+                borderRadius: 10,
+                cursor: "pointer",
+                marginBottom: 10,
+                background:
+                  selectedDm?.id === dm.id
+                    ? "#006CFC"
+                    : darkMode
+                    ? "#0b1a2b"
+                    : "#eef7ff",
+                color:
+                  selectedDm?.id === dm.id
+                    ? "#fff"
+                    : darkMode
+                    ? "#e6eefc"
+                    : "#0b1c3a",
+              }}
+            >
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 8,
+                  backgroundColor: darkMode ? "#1e3a5f" : "#e0e7ff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  flexShrink: 0,
+                }}
+              >
+                {dm.avatar ? (
+                  <img
+                    src={dm.avatar}
+                    alt={dm.username}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      e.target.parentElement.innerHTML = `<div style="color: ${
+                        darkMode ? "#fff" : "#4f46e5"
+                      }; font-weight: 600; font-size: 18px;">${
+                        dm.username?.charAt(0)?.toUpperCase() || "?"
+                      }</div>`;
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      color: darkMode ? "#fff" : "#4f46e5",
+                      fontWeight: 600,
+                      fontSize: 18,
+                    }}
+                  >
+                    {dm.username?.charAt(0)?.toUpperCase() || "?"}
+                  </div>
+                )}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <strong>{dm.username}</strong>
+                  {dm.unread > 0 && (
+                    <span
+                      style={{
+                        background: "#ef4444",
+                        color: "white",
+                        borderRadius: "50%",
+                        width: 20,
+                        height: 20,
                         display: "flex",
                         alignItems: "center",
-                        gap: 12,
-                        padding: 12,
-                        borderRadius: 10,
-                        cursor: "pointer",
-                        marginBottom: 10,
-                        background:
-                          selectedMessage?.id === m.id
-                            ? "#006CFC"
-                            : darkMode
-                              ? "#0b1a2b"
-                              : "#eef7ff",
-                        color:
-                          selectedMessage?.id === m.id
-                            ? "#fff"
-                            : darkMode
-                              ? "#e6eefc"
-                              : "#0b1c3a",
-                        transition: "background 0.2s ease",
+                        justifyContent: "center",
+                        fontSize: 12,
                       }}
                     >
-                      {/* ✅ Avatar */}
-                      {m.avatar ? (
-                        <img
-                          src={m.avatar}
-                          alt={m.username}
-                          style={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: "50%",
-                            objectFit: "cover",
-                          }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: "50%",
-                            background: "#c7d9ff",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontWeight: 700,
-                          }}
-                        >
-                          {m.username ? m.username.charAt(0).toUpperCase() : "U"}
-                        </div>
-                      )}
-
-                      {/* ✅ Text section */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <strong
-                            style={{
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            {m.username}
-                          </strong>
-                          <small
-                            style={{
-                              color: darkMode ? "#94a3b8" : "#6b7280",
-                              fontSize: 12,
-                              marginLeft: 8,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {m.time ? new Date(m.time).toLocaleString() : "Unknown"}
-                          </small>
-                        </div>
-                        <div
-                          style={{
-                            marginTop: 6,
-                            fontSize: 14,
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                          }}
-                        >
-                          {m.message || m.content || m.text || "(no text)"}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </>
-            )}
-
-            {activeTab === "dms" && (
-              <>
-                {/* 🔽 Page Selector for DMs */}
-<div style={{ marginBottom: 16 }}>
-  <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
-    Select Page: *
-  </label>
-<select
-  value={selectedPage?.id || ""}
-  onChange={(e) => {
-    const page = pages.find(p => p.id === e.target.value);
-    setSelectedPage(page);
-  }}
-   style={{
-   width: "100%",
-   padding: "12px",
-   borderRadius: "8px",
-   border: "1px solid #d1d5db",
-   background: darkMode ? "#374151" : "#fff",
-   color: darkMode ? "#f3f4f6" : "#111827",
- }}
->
-  <option value="">-- Select Page --</option>
-  {pages.map(page => (
-    <option key={page.id} value={page.id}>{page.name}</option>
-  ))}
-</select>
-</div>
-
-                {/* 🔽 Messages Section */}
-                {!fbUser ? (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      paddingTop: 30,
-                      color: darkMode ? "#9aa7c7" : "#6b7280",
-                    }}
-                  >
-                    <Mail style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                    <div>Please login to view messages</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>
-                      Click the login button above
-                    </div>
-                  </div>
-                ) : dms.length === 0 ? (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      paddingTop: 30,
-                      color: darkMode ? "#9aa7c7" : "#6b7280",
-                    }}
-                  >
-                    <Mail style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                    <div>No messages yet</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>
-                      Select a page and click Refresh
-                    </div>
-                  </div>
-                ) : (
-                  dms.map((dm) => (
-                    <div
-                      key={dm.id}
-                      onClick={() => handleDmClick(dm)}
-                      style={{
-                        display: "flex",
-                        gap: 10,
-                        padding: 12,
-                        borderRadius: 10,
-                        cursor: "pointer",
-                        marginBottom: 10,
-                        background:
-                          selectedDm?.id === dm.id
-                            ? "#006CFC"
-                            : darkMode
-                              ? "#0b1a2b"
-                              : "#eef7ff",
-                        color:
-                          selectedDm?.id === dm.id
-                            ? "#fff"
-                            : darkMode
-                              ? "#e6eefc"
-                              : "#0b1c3a",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: 8,
-                          backgroundColor: darkMode ? "#1e3a5f" : "#e0e7ff",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          overflow: "hidden",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {dm.avatar ? (
-                          <img
-                            src={dm.avatar}
-                            alt={dm.username}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                            onError={(e) => {
-                              e.target.style.display = "none";
-                              e.target.parentElement.innerHTML = `<div style="color: ${darkMode ? '#fff' : '#4f46e5'}; font-weight: 600; font-size: 18px;">${dm.username?.charAt(0)?.toUpperCase() || '?'}</div>`;
-                            }}
-                          />
-                        ) : (
-                          <div style={{ color: darkMode ? "#fff" : "#4f46e5", fontWeight: 600, fontSize: 18 }}>
-                            {dm.username?.charAt(0)?.toUpperCase() || "?"}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <strong>{dm.username}</strong>
-                          {dm.unread > 0 && (
-                            <span
-                              style={{
-                                background: "#ef4444",
-                                color: "white",
-                                borderRadius: "50%",
-                                width: 20,
-                                height: 20,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 12,
-                              }}
-                            >
-                              {dm.unread}
-                            </span>
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            marginTop: 6,
-                            fontSize: 14,
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                          }}
-                        >
-                          {dm.lastMessage || "(no message)"}
-                        </div>
-                        <div
-                          style={{
-                            marginTop: 4,
-                            fontSize: 12,
-                            color: darkMode ? "#94a3b8" : "#6b7280",
-                          }}
-                        >
-                          {new Date(dm.time).toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </>
-            )}
+                      {dm.unread}
+                    </span>
+                  )}
+                </div>
+                <div
+                  style={{
+                    marginTop: 6,
+                    fontSize: 14,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
+                  {dm.lastMessage || "(no message)"}
+                </div>
+                <div
+                  style={{
+                    marginTop: 4,
+                    fontSize: 12,
+                    color: darkMode ? "#94a3b8" : "#6b7280",
+                  }}
+                >
+                  {new Date(dm.time).toLocaleString()}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    )}
+  </>
+)}
 
 
-            {activeTab === "posts" && (
-              <div style={{ padding: 16 }}>
-                {!fbUser ? (
-                  <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
-                    <Image style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                    <div>Please login to view and create posts</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>Click the login button above</div>
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <h3 style={{ margin: 0 }}>Your Posts</h3>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button
-                          onClick={() => setShowPostForm(!showPostForm)}
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: 8,
-                            border: 'none',
-                            background: showPostForm ? '#dc2626' : '#006CFC',
-                            color: '#fff',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          {showPostForm ? 'Cancel' : '+ Create Post'}
-                        </button>
-                      </div>
-                    </div>
+{activeTab === "posts" && (
+  <div style={{ padding: 16 }}>
+    {!fbUser ? (
+      // 🔹 Show login message if not logged in
+      <div style={{ textAlign: "center", paddingTop: 30, color: darkMode ? "#9aa7c7" : "#6b7280" }}>
+        <Image style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
+        <div>Please login to view and create posts</div>
+        <div style={{ fontSize: 13, marginTop: 6 }}>Click the login button above</div>
+      </div>
+    ) : (
+      <>
+        {/* 🔹 STEP 1 — Select Platform (only shown initially) */}
+        {!selectedPlatform && (
+          <div style={{ textAlign: "center", marginTop: 40 }}>
+            <h3>Select a Platform to Manage Posts</h3>
+            <div style={{ display: "flex", flexDirection:"column", gap: 12, justifyContent: "center" }}>
 
-                    {/* Post Creation Form - Shows when Create Post is clicked */}
-                    {showPostForm && (
-                      <div style={{
-                        background: darkMode ? '#1f2937' : '#f9fafb',
-                        padding: 20,
-                        borderRadius: 12,
-                        marginBottom: 20
-                      }}>
-                        <h4 style={{ marginBottom: 16 }}>Create New Post</h4>
+              {/* Instagram */}
+              <button
+                onClick={() => {
+                  setSelectedPlatform("instagram");
+                  fetchPlatformPosts("instagram");
+                }}
+               style={{
+                 display: "flex",
+                 alignItems: "center",
+                 gap: 8,
+                 background: darkMode ? "#1f2937" : "#fff",
+                 color: darkMode ? "#f9fafb" : "#111827",
+                 border: "1px solid #d1d5db",
+                 borderRadius: 8,
+                 padding: "10px 16px",
+                 cursor: "pointer",
+                }}
+              >
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png"
+                  alt="Instagram"
+                  width={24}
+                  height={24}
+                />
+                  Instagram
+              </button>
+
+              {/* Facebook */}
+              <button
+                onClick={() => {
+                  setSelectedPlatform("facebook");
+                  fetchPlatformPosts("facebook");
+                }}
+               style={{
+                 display: "flex",
+                 alignItems: "center",
+                 gap: 8,
+                 background: darkMode ? "#1f2937" : "#fff",
+                 color: darkMode ? "#f9fafb" : "#111827",
+                 border: "1px solid #d1d5db",
+                 borderRadius: 8,
+                 padding: "10px 16px",
+                 cursor: "pointer",
+                }}
+              >
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/4/44/Facebook_Logo.png"
+                  alt="Facebook"
+                  width={24}
+                  height={24}
+                />
+                  Facebook  
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 🔹 STEP 2 — Show Posts and Create Form when a platform is selected */}
+        {selectedPlatform && (
+          <>
+            {/* Header */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+
+              <div style={{ display: "flex", gap: 8 }}>
+                {/* Back Button */}
+                <button
+                  onClick={() => setSelectedPlatform(null)}
+                  style={{
+                    padding: "6px 10px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "#6b7280",
+                    color: "#fff",
+                    cursor: "pointer",
+                  }}
+                >
+                  ← Back
+                </button>
+                
+                  <h3 style={{ margin: 0 }}>
+                    {selectedPlatform === "instagram" ? "Instagram Posts" : "Facebook Posts"}
+                  </h3>
+
+                {/* Create Post Button */}
+                <button
+                  onClick={() => setShowPostForm(!showPostForm)}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: showPostForm ? "#dc2626" : "#006CFC",
+                    color: "#fff",
+                    cursor: "pointer",
+                  }}
+                >
+                  {showPostForm ? "Cancel" : "+ Create Post"}
+                </button>
+
+                {/* Refresh Button */}
+                <button
+                  onClick={() => fetchPlatformPosts(selectedPlatform)}
+                  style={{
+                    padding: "6px 10px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "#006CFC",
+                    color: "#fff",
+                    cursor: "pointer",
+                  }}
+                >
+                  {loading ? "Loading..." : "Refresh"}
+                </button>
+              </div>
+            </div>
+
+            {/* Post Creation Form */}
+            {showPostForm && (
+              <div
+                style={{
+                  background: darkMode ? "#1f2937" : "#f9fafb",
+                  padding: 20,
+                  borderRadius: 12,
+                  marginBottom: 20,
+                }}
+              >
+                                       <h4 style={{ marginBottom: 16 }}>Create New Post</h4>
 
                         <div style={{ marginBottom: 16 }}>
                           <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
@@ -1908,33 +2511,6 @@ const handleFBLogin = () => {
                             ))}
                           </select>
                         </div>
-
-{/* <div style={{ marginBottom: 16 }}>
-  <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
-    Select Page: *
-  </label>
-<select
-  value={selectedPage?.id || ""}
-  onChange={(e) => {
-    const page = pages.find(p => p.id === e.target.value);
-    setSelectedPage(page);
-  }}
-   style={{
-    width: "100%",
-    padding: "12px",
-    borderRadius: "8px",
-    border: "1px solid #d1d5db",
-    background: darkMode ? "#374151" : "#fff",
-    color: darkMode ? "#f3f4f6" : "#111827",
-  }}
->
-  <option value="">-- Select Page --</option>
-  {pages.map(page => (
-    <option key={page.id} value={page.id}>{page.name}</option>
-  ))}
-</select>
-</div> */}
-
 
                         <div style={{ marginBottom: 16 }}>
                           <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
@@ -2014,87 +2590,121 @@ const handleFBLogin = () => {
                             Cancel
                           </button>
                         </div>
-                      </div>
-                    )}
-
-                    {/* Posts List - Shows when no form is active or after creating posts */}
-                    {!showPostForm && (
-                      posts.length === 0 ? (
-                        <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
-                          <Image style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                          <div>No posts yet</div>
-                          <div style={{ fontSize: 13, marginTop: 6 }}>Click "Create Post" to get started</div>
-                        </div>
-                      ) : (
-                        <div>
-                          {posts.map((post) => (
-                            <div
-                              key={post.id}
-                              onClick={() => setSelectedPost(post)}
-                              style={{
-                                padding: 16,
-                                borderRadius: 10,
-                                marginBottom: 12,
-                                background: darkMode ? '#1f2937' : '#fff',
-                                border: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb'),
-                                cursor: "pointer"
-                              }}
-                            >
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  {/* ✅ Author avatar */}
-                                  {post.authorImage && (
-                                    <img
-                                      src={post.authorImage}
-                                      alt={post.authorName}
-                                      style={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: '50%',
-                                        objectFit: 'cover'
-                                      }}
-                                    />
-                                  )}
-                                  <div>
-                                    <strong style={{ fontSize: 16 }}>{post.caption || post.content.slice(0, 30)}</strong>
-                                    <div style={{ fontSize: 12, color: darkMode ? '#94a3b8' : '#6b7280', marginTop: 4 }}>
-                                      Posted by: {post.authorName || post.page}
-                                    </div>
-                                  </div>
-                                </div>
-                                <small style={{ color: darkMode ? '#94a3b8' : '#6b7280', fontSize: 12 }}>
-                                  {new Date(post.timestamp).toLocaleDateString()}
-                                </small>
-                              </div>
-                              <p style={{ marginBottom: 12, color: darkMode ? '#d1d5db' : '#374151' }}>
-                                {post.content.length > 150 ? post.content.slice(0, 150) + "..." : post.content}
-                              </p>
-                              {post.mediaUrl && (
-                                <img
-                                  src={post.mediaUrl}
-                                  alt="Post"
-                                  style={{
-                                    width: '100%',
-                                    maxHeight: 300,
-                                    objectFit: 'cover',
-                                    borderRadius: 8,
-                                    marginTop: 8
-                                  }}
-                                  onError={(e) => {
-                                    console.log("Image load error for:", post.mediaUrl);
-                                    e.target.style.display = 'none';
-                                  }}
-                                />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )
-                    )}
-                  </>
-                )}
               </div>
             )}
+
+            {/* Posts Display */}
+            {!showPostForm && (
+              posts.length === 0 ? (
+                <div style={{ textAlign: "center", paddingTop: 30, color: darkMode ? "#9aa7c7" : "#6b7280" }}>
+                  <Image style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
+                  <div>No posts found</div>
+                  <div style={{ fontSize: 13, marginTop: 6 }}>
+                    Click "Refresh" or "Create Post" to get started
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  {posts.map((post) => (
+                    <div
+                      key={post.id}
+                      onClick={() => setSelectedPost(post)}
+                      style={{
+                        padding: 16,
+                        borderRadius: 10,
+                        marginBottom: 12,
+                        background: darkMode ? "#1f2937" : "#fff",
+                        border: "1px solid " + (darkMode ? "#374151" : "#e5e7eb"),
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: 8,
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {post.authorImage && (
+                            <img
+                              src={post.authorImage}
+                              alt={post.authorName}
+                              style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: "50%",
+                                objectFit: "cover",
+                              }}
+                            />
+                          )}
+                          <div>
+                            <strong style={{ fontSize: 16 }}>
+                              {post.caption || post.content.slice(0, 30)}
+                            </strong>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color: darkMode ? "#94a3b8" : "#6b7280",
+                                marginTop: 4,
+                              }}
+                            >
+                              Posted by: {post.authorName || post.page}
+                            </div>
+                          </div>
+                        </div>
+                        <small
+                          style={{
+                            color: darkMode ? "#94a3b8" : "#6b7280",
+                            fontSize: 12,
+                          }}
+                        >
+                          {new Date(post.timestamp).toLocaleDateString()}
+                        </small>
+                      </div>
+
+                      <p
+                        style={{
+                          marginBottom: 12,
+                          color: darkMode ? "#d1d5db" : "#374151",
+                        }}
+                      >
+                        {post.content.length > 150
+                          ? post.content.slice(0, 150) + "..."
+                          : post.content}
+                      </p>
+
+                      {post.mediaUrl && (
+                        <img
+                          src={post.mediaUrl}
+                          alt="Post"
+                          style={{
+                            width: "100%",
+                            maxHeight: 300,
+                            objectFit: "cover",
+                            borderRadius: 8,
+                            marginTop: 8,
+                          }}
+                          onError={(e) => {
+                            console.log("Image load error for:", post.mediaUrl);
+                            e.target.style.display = "none";
+                          }}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+          </>
+        )}
+      </>
+    )}
+  </div>
+)}
+
+
           </section>
 
           {/* Chat / message viewer */}
@@ -2128,10 +2738,16 @@ const handleFBLogin = () => {
                       )}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 700 }}>{selectedPost.authorName || "Your Post"}</div>
-                      <div style={{ fontSize: 13, color: darkMode ? "#9aa7c7" : "#6b7280" }}>
-                        {selectedPost.page || "Facebook"}
-                      </div>
+                        <div style={{ fontWeight: 700 }}>
+                          {selectedPost.authorName || "Your Post"}
+                        </div>
+                        <div style={{ fontSize: 13, color: darkMode ? "#9aa7c7" : "#6b7280" }}>
+                          {selectedPost.platform
+                            ? selectedPost.platform === "facebook"
+                              ? "Facebook"
+                              : "Instagram"
+                            : "Unknown Platform"}
+                        </div>
                     </div>
                   </div>
                 </div>
