@@ -25,7 +25,7 @@ const LoginForm = () => {
 
     try {
       const response = await axios.post(
-        '/api/auth/login',
+        'http://127.0.0.1:8000/auth/login',
         { email, password },
         { withCredentials: true }
       );

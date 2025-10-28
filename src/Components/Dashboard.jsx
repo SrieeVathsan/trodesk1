@@ -23,6 +23,8 @@ import axios from "axios";
 import logo from "../assets/logo.png";
 import facebookIcon from "../assets/facebook.png";
 import instagramIcon from "../assets/instagram.png";
+// import Mention from "./Mention";
+// import Mention from "../Components/Mention";
 // import "./App.css";
 
 const FB_SDK_POLL_INTERVAL = 300; // ms
@@ -77,6 +79,13 @@ const Dashboard = () => {
 
 const [fbPageId, setFbPageId] = useState(null);
 const [fbInstagramId, setFbInstagramId] = useState(null);
+const [comments, setComments] = useState([]);
+const [igPostsFetched, setIgPostsFetched] = useState(false);
+const [postsLoaded, setPostsLoaded] = useState(false);
+
+
+
+
 
 
   useEffect(() => {
@@ -259,7 +268,7 @@ const fetchFacebookMentions = useCallback(async () => {
 
   setLoading(true);
   try {
-    const res = await axios.get("/api/facebook/mentions", {
+    const res = await axios.get("http://127.0.0.1:8000/facebook/mentions", {
       params: {
         access_token: pageAccessToken,
         page_id: pageId,
@@ -292,7 +301,7 @@ const fetchFacebookMentions = useCallback(async () => {
   }
 }, [fbUser]);
 
-// ---------------- Fetch Instagram Mentions ----------------
+// // ---------------- Fetch Instagram Mentions ----------------
 const fetchInstagramMentions = useCallback(async () => {
   const igUserId = localStorage.getItem("fbInstagramId");
   const pageAccessToken = localStorage.getItem("fbAccessToken");
@@ -314,7 +323,7 @@ const fetchInstagramMentions = useCallback(async () => {
 
   setLoading(true);
   try {
-    const res = await axios.get("/api/instagram/mentions", {
+    const res = await axios.get("http://127.0.0.1:8000/instagram/mentions", {
       params: {
         access_token: pageAccessToken,
         ig_user_id: igUserId,
@@ -365,7 +374,7 @@ const fetchInstagramMentions = useCallback(async () => {
 
     setLoading(true);
     try {
-      const res = await axios.get("/api/facebook/conversations", {
+      const res = await axios.get("http://127.0.0.1:8000/facebook/conversations", {
         params: { page_id: pageId, access_token: pageAccessToken },
       });
 
@@ -426,69 +435,6 @@ const fetchInstagramMentions = useCallback(async () => {
 
 
 
-  // ---------------- Fetch IG Business Account ----------------
-  // const fetchIgBusinessAccount = useCallback(async (pageId, pageAccessToken) => {
-  //   try {
-  //     const res = await axios.get("https://sunny-positively-thrush.ngrok-free.app/instagram/business-account", {
-  //       params: {
-  //         page_id: pageId,
-  //         page_access_token: pageAccessToken,
-  //       },
-  //     });
-
-  //     console.log("✅ IG Business Account:", res.data);
-
-  //     if (res.data?.ig_user_id) {
-  //       setIgUserId(res.data.ig_user_id); // ✅ Save IG User ID
-  //     }
-
-  //     return res.data;
-  //   } catch (err) {
-  //     console.error("❌ Fetch IG Business Account error:", err.response?.data || err.message);
-  //     alert("Failed to fetch Instagram Business Account.");
-  //     return null;
-  //   }
-  // }, []);
-
-  // ---------------- Fetch IG Mentions ----------------
-// const fetchIgMentions = useCallback(async () => {
-//   const storedPageId = localStorage.getItem("fbPageId");
-//   const storedAccessToken = localStorage.getItem("fbAccessToken");
-//   const storedIgUserId = localStorage.getItem("fbInstagramId");
-
-//   const pageId = storedPageId;
-//   const accessToken = storedAccessToken;
-//   const igUserId = storedIgUserId;
-
-//   if (!pageId || !accessToken || !igUserId) {
-//     console.warn("⚠️ Missing Page ID, IG User ID, or Access Token");
-//     return null;
-//   }
-
-//   try {
-//     const res = await axios.get("/api/instagram/mentions", {
-//       params: {
-//         page_id: pageId,          // ✅ Facebook Page ID
-//         access_token: accessToken, // ✅ Page access token
-//         ig_user_id: igUserId,     // ✅ Instagram Business User ID
-//       },
-//     });
-
-//     console.log("✅ IG Mentions:", res.data);
-//     return res.data;
-//   } catch (err) {
-//     console.error("❌ Fetch IG Mentions error:", err.response?.data || err.message);
-//     return null;
-//   }
-// }, []);
-
-//  useEffect(() => {
-//     fetchIgMentions();
-
-  
-//     }, []);
-
-
   // ---------------- Fetch Posts ----------------
   const fetchPosts = useCallback(async () => {
     const pageId = localStorage.getItem("fbPageId");
@@ -506,7 +452,7 @@ const fetchInstagramMentions = useCallback(async () => {
 
     setLoading(true);
     try {
-      const res = await axios.get("/api/facebook/posts", {
+      const res = await axios.get("http://127.0.0.1:8000/facebook/posts", {
         params: {
           page_id: pageId,
           access_token: pageAccessToken,
@@ -558,67 +504,65 @@ const fetchInstagramMentions = useCallback(async () => {
     }
   }, [fbUser]);
 
-  // ✅ Fetch posts when platform is selected - REMOVED auto-fetch
-  // Only fetch when user selects Facebook platform in Posts tab
-  // useEffect(() => {
-  //   if (activeTab === "posts" && fbUser) {
-  //     fetchPosts();
-  //   }
-  // }, [activeTab, fbUser, fetchPosts]);
+  
+// ---------------- Fetch Instagram Posts ----------------
+const fetchIgPosts = useCallback(async () => {
+  const igUserId = localStorage.getItem("fbInstagramId");
+  const accessToken = localStorage.getItem("fbAccessToken");
 
-  // ---------------- Fetch Instagram Posts ----------------
-  const fetchIgPosts = useCallback(async () => {
-    const igUserId = localStorage.getItem("fbInstagramId");
-    const accessToken = localStorage.getItem("fbAccessToken");
+  if (!igUserId || !accessToken) {
+    console.warn("⚠️ Missing Instagram credentials");
+    return;
+  }
 
-    if (!fbUser) {
-      alert("Please login first to view Instagram posts");
-      return;
-    }
+  setLoading(true);
+  try {
+    const res = await axios.get("http://127.0.0.1:8000/instagram/posts", {
+      params: { ig_user_id: igUserId, access_token: accessToken },
+    });
 
-    if (!igUserId || !accessToken) {
-      console.warn("⚠️ Missing Instagram User ID or Access Token");
-      return;
-    }
+    const posts = (res.data?.data || []).map((item, i) => ({
+      id: item.id || `ig_post_${i}`,
+      caption: item.caption || "",
+      mediaType: item.media_type || "IMAGE",
+      mediaUrl: item.media_url || "",
+      timestamp: item.timestamp || new Date().toISOString(),
+      permalink: item.permalink || "#",
+    }));
 
-    setLoading(true);
-    try {
-      const res = await axios.get("/api/instagram/posts", {
-        params: {
-          ig_user_id: igUserId,
-          access_token: accessToken,
-        },
-      });
+    setIgPosts(posts);
+  } catch (err) {
+    console.error("❌ Fetch Instagram Posts error:", err);
+    setIgPosts([]);
+  } finally {
+    setLoading(false);
+  }
+}, []); // ✅ No dependencies → stable reference
 
-      console.log("✅ Instagram posts fetched:", res.data);
+console.log("🔁 IG post effect triggered");
 
-      const data = res.data?.data || [];
-      const postsFormatted = data.map((item, i) => ({
-        id: item.id || `ig_post_${i}`,
-        caption: item.caption || "",
-        mediaType: item.media_type || "IMAGE",
-        mediaUrl: item.media_url || "",
-        timestamp: item.timestamp || new Date().toISOString(),
-        permalink: item.permalink || "#",
-      }));
+useEffect(() => {
+  if (
+    selectedPlatform === "instagram" &&
+    activeTab === "posts" &&
+    !postsLoaded
+  ) {
+    console.log("📸 Fetching Instagram posts only once after page load...");
+    fetchIgPosts();
+    setPostsLoaded(true);
+  }
+}, [selectedPlatform, activeTab, postsLoaded]);
 
-      setIgPosts(postsFormatted);
-    } catch (err) {
-      console.error("❌ Fetch Instagram Posts error:", err);
-      setIgPosts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [fbUser]);
+useEffect(() => {
+  if (selectedPlatform !== "instagram" || activeTab !== "posts") {
+    setPostsLoaded(false);
+  }
+}, [selectedPlatform, activeTab]);
 
-  // ✅ Fetch posts when platform is selected in Posts tab
-  useEffect(() => {
-    if (selectedPlatform === 'facebook' && fbUser && activeTab === 'posts') {
-      fetchPosts();
-    } else if (selectedPlatform === 'instagram' && fbUser && activeTab === 'posts') {
-      fetchIgPosts();
-    }
-  }, [selectedPlatform, fbUser, activeTab, fetchPosts, fetchIgPosts]);
+
+
+
+
 
   // ✅ Fetch mentions when platform is selected in Mentions tab
   useEffect(() => {
@@ -640,7 +584,7 @@ const fetchInstagramMentions = useCallback(async () => {
 
     try {
       // ✅ Use backend endpoint instead of direct Facebook API call
-      const res = await axios.get("/api/me/accounts", {
+      const res = await axios.get("http://127.0.0.1:8000/me/accounts", {
         params: { access_token: fbUser.accessToken },
       });
 
@@ -729,72 +673,13 @@ useEffect(() => {
   getPages();
 }, [fbUser, fetchPages]);
 
-// useEffect(() => {
-//   const loadData = async () => {
-//     if (!fbUser || pages.length === 0) return;
-
-//     console.log("👤 fbUser set, fetching data...");
-
-//     const firstPage = pages[0];
-//     if (!firstPage?.id || !firstPage?.access_token) {
-//       console.warn("⚠️ Missing page id or token");
-//       return;
-//     }
-
-//     try {
-//       // ✅ 1️⃣ Fetch IG Business Account
-//       const igAcc = await fetchIgBusinessAccount(firstPage.id, firstPage.access_token);
-//       if (!igAcc?.ig_user_id) {
-//         console.warn("⚠️ No IG user ID found for the page");
-//         return;
-//       }
-
-//       // ✅ 2️⃣ Fetch all mentions (Facebook + IG + X)
-//       await fetchAllMentions();
-
-//       // ✅ 3️⃣ Fetch direct messages
-//       await fetchDms();
-
-//       // ✅ 4️⃣ Optionally fetch only Instagram mentions directly (if needed)
-//       const igMentions = await fetchIgMentions(firstPage.access_token, igAcc.ig_user_id);
-//       if (igMentions?.data) {
-//         setMentions((prev) => [
-//           ...prev,
-//           ...igMentions.data.map((m, i) => ({
-//             platform: "Instagram",
-//             id: m.id || `ig_${i}`,
-//             message: m.caption || "",
-//             content: m.caption || "",
-//             time: m.timestamp || new Date().toISOString(),
-//             mediaId: m.id,
-//             username: m.username || "Instagram User",
-//             mediaUrl: m.media_url || "",
-//             permalink: m.permalink || "",
-//             replies: [],
-//           })),
-//         ]);
-//       }
-//     } catch (err) {
-//       console.error("❌ Error fetching all data:", err);
-//     }
-//   };
-
-//   loadData();
-// }, [
-//   fbUser,
-//   pages,
-//   fetchAllMentions,
-//   fetchDms,
-//   fetchIgBusinessAccount,
-//   fetchIgMentions,
-// ]);
-
 
   // ---------------- Reply to mention ----------------
   const handleReply = async () => {
     if (!selectedMessage || !replyText.trim()) return;
 
     const accessToken = localStorage.getItem("fbAccessToken");
+    const igUserId = localStorage.getItem("fbInstagramId");
     
     if (!accessToken) {
       alert("⚠️ Access token not found. Please login again.");
@@ -847,13 +732,14 @@ useEffect(() => {
         });
 
         response = await axios.post(
-          "/api/instagram/reply-to-mentions",
+          "http://127.0.0.1:8000/instagram/reply-to-mentions",
           null,
           {
             params: {
               media_id: selectedMessage.id,
               comment_text: replyMessage,
               access_token: accessToken,
+              ig_user_id:igUserId,
             },
           }
         );
@@ -867,13 +753,14 @@ useEffect(() => {
         });
 
         response = await axios.post(
-          "/api/facebook/sent_private",
+          "http://127.0.0.1:8000/facebook/sent_private",
           null,
           {
             params: {
               post_id: selectedMessage.id,
               message: replyMessage,
               access_token: accessToken,
+              
             },
           }
         );
@@ -1020,7 +907,7 @@ useEffect(() => {
     try {
       // ✅ Call backend API to send Facebook message
       const response = await axios.post(
-        "/api/facebook/message/send",
+        "http://127.0.0.1:8000/facebook/message/send",
         null,
         {
           params: {
@@ -1206,7 +1093,7 @@ const handleMakePost = async () => {
 
     // ✅ Make POST request
     const res = await axios.post(
-      "/api/facebook/posts",
+      "http://127.0.0.1:8000/facebook/posts",
       formData,
       {
         headers: {
@@ -1274,7 +1161,7 @@ const handleUpdatePost = async () => {
     formData.append("new_message", editContent);
     formData.append("access_token", accessToken);
 
-    await axios.put(`/api/facebook/posts/${editingPost.id}`, formData, {
+    await axios.put(`http://127.0.0.1:8000/facebook/posts/${editingPost.id}`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -1326,7 +1213,7 @@ const handleDeletePost = async (postId) => {
 
   try {
     setPostActionLoading(true);
-    await axios.delete(`/api/facebook/posts/${postId}`, {
+    await axios.delete(`http://127.0.0.1:8000/facebook/posts/${postId}`, {
       params: {
         access_token: accessToken,
       },
@@ -1362,7 +1249,7 @@ const fetchPostComments = async (postId) => {
 
   try {
     setLoadingComments(true);
-    const response = await axios.get(`/api/facebook/post/comments/`, {
+    const response = await axios.get(`http://127.0.0.1:8000/facebook/post/comments/`, {
       params: {
         post_id: postId,
         access_token: accessToken,
@@ -1398,7 +1285,7 @@ const handleReplyToComment = async (commentId, postId) => {
 
   try {
     setLoadingComments(true);
-    const response = await axios.post(`/api/facebook/post/comment/reply`, null, {
+    const response = await axios.post(`http://127.0.0.1:8000/facebook/post/comment/reply`, null, {
       params: {
         comment_id: commentId,
         message: commentReplyText,
@@ -1477,7 +1364,7 @@ const handleMakeInstagramPost = async () => {
 
     // Send usernames as JSON body, other params as query params
     const res = await axios.post(
-      "/api/instagram/create-post",
+      "http://127.0.0.1:8000/instagram/create-post",
       usernameArray.length > 0 ? usernameArray : [],
       {
         params: params,
@@ -1510,7 +1397,36 @@ const handleMakeInstagramPost = async () => {
   }
 };
 
+//------------------fetch instagram comments-------//
 
+const fetchInstaComments = async (postId) => {
+  try {
+    const accessToken = localStorage.getItem("fbAccessToken");
+    if (!accessToken) return;
+
+    const res = await axios.get("http://localhost:8000/instagram/post/comments/", {
+      params: { media_id: postId, access_token: accessToken },
+    });
+
+    setCommentsData((prev) => ({
+      ...prev,
+      [postId]: res.data?.data || [],
+    }));
+  } catch (err) {
+    console.error("Error fetching comments:", err);
+  }
+};
+
+//------------dispaly the Insta comment-----------//
+
+
+const handleToggleInstaComments = async (post) => {
+  setShowCommentsForPost((prev) => (prev === post.id ? null : post.id));
+
+  if (!commentsData[post.id]) {
+    await fetchInstaComments(post.id);
+  }
+};
 
 
   // ---------------- Facebook login ----------------
@@ -1552,7 +1468,7 @@ const handleFBLogin = () => {
               localStorage.setItem("fbUser", JSON.stringify(userData));
 
               // ✅ Send user info + token to backend
-              axios.post("/api/facebook/auth", {
+              axios.post("http://127.0.0.1:8000/facebook/auth", {
                 access_token: accessToken,
                 user_id: userInfo.id,
                 name: userInfo.name,
@@ -1617,7 +1533,7 @@ const handleFBLogin = () => {
 
   const handleLogoutbutton = async () => {
     try {
-      const res = await axios.post("/api/auth/logout", {}, {
+      const res = await axios.post("http://127.0.0.1:8000/auth/logout", {}, {
         withCredentials: true, // Important: include cookies
       });
       if (res.data.success) {
@@ -1769,2139 +1685,2246 @@ const handleFBLogin = () => {
             </div>
           </div>
         </header>
-
+       
         <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-          <section style={{ width: 320, borderRight: "1px solid rgba(0,0,0,0.06)", overflowY: "auto", padding: 16, background: darkMode ? "#071226" : "#f9fbff" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <h3 style={{ margin: 0 }}>
-                {activeTab === "mentions" ? "Mentions" :
-                  activeTab === "dms" ? "Direct Messages" :
-                    "Posts"}
-              </h3>
+                  <section style={{ width: 320, borderRight: "1px solid rgba(0,0,0,0.06)", overflowY: "auto", padding: 16, background: darkMode ? "#071226" : "#f9fbff" }}>
+                    <mention />
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <h3 style={{ margin: 0 }}>
+                        {activeTab === "mentions" ? "Mentions" :
+                          activeTab === "dms" ? "Direct Messages" :
+                            "Posts"}
+                      </h3>
+                      <button
+                        onClick={() => {
+                          // Refresh based on selected platform
+                          if (activeTab === "mentions") {
+                            if (selectedMentionPlatform === 'facebook') fetchFacebookMentions();
+                            else if (selectedMentionPlatform === 'instagram') fetchInstagramMentions();
+                          } else if (activeTab === "dms") {
+                            fetchDms();
+                          } else if (activeTab === "posts") {
+                            if (selectedPlatform === 'facebook') fetchPosts();
+                            else if (selectedPlatform === 'instagram') fetchIgPosts();
+                          }
+                        }}
+                        style={{
+                          padding: "6px 10px",
+                          borderRadius: 8,
+                          border: "none",
+                          background: "#006CFC",
+                          color: "#fff",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {loading ? "Loading..." : "Refresh"}
+                      </button>
+                    </div>
+        
+                    {/* ✅ Show IG User ID here */}
+                    {igUserId && (
+                      <div style={{ fontSize: 12, color: darkMode ? "#9aa7c7" : "#374151", marginBottom: 8 }}>
+                        ✅ Linked Instagram ID: <strong>{igUserId}</strong>
+                      </div>
+                    )}
+        
+        
+                    {activeTab === "mentions" && (
+                      <>
+                        {!fbUser ? (
+                          // 🚫 Login required
+                          <div
+                            style={{
+                              textAlign: "center",
+                              paddingTop: 30,
+                              color: darkMode ? "#9aa7c7" : "#6b7280",
+                            }}
+                          >
+                            <MessageSquare
+                              style={{ width: 48, height: 48, margin: "0 auto 12px" }}
+                            />
+                            <div>Please login to view mentions</div>
+                            <div style={{ fontSize: 13, marginTop: 6 }}>
+                              Click the login button above
+                            </div>
+                          </div>
+                        ) : !selectedMentionPlatform ? (
+                          // ✅ Platform selection
+                          <div style={{ padding: "20px", textAlign: "center" }}>
+                            <h3 style={{ 
+                              marginBottom: "20px", 
+                              color: darkMode ? "#e6eefc" : "#0b1c3a",
+                              fontSize: "18px",
+                              fontWeight: "600"
+                            }}>
+                              Select Platform
+                            </h3>
+                            <div style={{ 
+                              display: "flex", 
+                              gap: "20px", 
+                              justifyContent: "center",
+                              flexWrap: "wrap"
+                            }}> 
+                              {/* Facebook Button */}
+                             <button
+                                onClick={() => setSelectedMentionPlatform('facebook')}
+                                style={{
+                                  width: "200px",
+                                  padding: "20px",
+                                  borderRadius: "12px",
+                                  border: "none",
+                                  background: darkMode ? "#1e3a5f" : "#ffffff",
+                                  cursor: "pointer",
+                                  transition: "all 0.3s ease",
+                                  boxShadow: darkMode 
+                                    ? "0 4px 6px rgba(0, 0, 0, 0.3)" 
+                                    : "0 4px 6px rgba(0, 0, 0, 0.1)",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = "translateY(-5px)";
+                                  e.currentTarget.style.boxShadow = darkMode
+                                    ? "0 8px 12px rgba(0, 0, 0, 0.4)"
+                                    : "0 8px 12px rgba(0, 0, 0, 0.15)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = "translateY(0)";
+                                  e.currentTarget.style.boxShadow = darkMode
+                                    ? "0 4px 6px rgba(0, 0, 0, 0.3)"
+                                    : "0 4px 6px rgba(0, 0, 0, 0.1)";
+                                }}
+                              >
+                                <img 
+                                  src={facebookIcon} 
+                                  alt="Facebook" 
+                                  style={{ width: "60px", height: "60px", marginBottom: "10px" }}
+                                />
+                                <div style={{ 
+                                  color: darkMode ? "#e6eefc" : "#0b1c3a",
+                                  fontSize: "16px",
+                                  fontWeight: "600"
+                                }}>
+                                  Facebook
+                                </div>
+                              </button>
+        
+                              {/* Instagram Button */}
+                               <button
+                                onClick={() => setSelectedMentionPlatform('instagram')}
+                                style={{
+                                  width: "200px",
+                                  padding: "20px",
+                                  borderRadius: "12px",
+                                  border: "none",
+                                  background: darkMode ? "#1e3a5f" : "#ffffff",
+                                  cursor: "pointer",
+                                  transition: "all 0.3s ease",
+                                  boxShadow: darkMode 
+                                    ? "0 4px 6px rgba(0, 0, 0, 0.3)" 
+                                    : "0 4px 6px rgba(0, 0, 0, 0.1)",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = "translateY(-5px)";
+                                  e.currentTarget.style.boxShadow = darkMode
+                                    ? "0 8px 12px rgba(0, 0, 0, 0.4)"
+                                    : "0 8px 12px rgba(0, 0, 0, 0.15)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = "translateY(0)";
+                                  e.currentTarget.style.boxShadow = darkMode
+                                    ? "0 4px 6px rgba(0, 0, 0, 0.3)"
+                                    : "0 4px 6px rgba(0, 0, 0, 0.1)";
+                                }}
+                              >
+                                <img 
+                                  src={instagramIcon} 
+                                  alt="Instagram" 
+                                  style={{ width: "60px", height: "60px", marginBottom: "10px" }}
+                                />
+                                <div style={{ 
+                                  color: darkMode ? "#e6eefc" : "#0b1c3a",
+                                  fontSize: "16px",
+                                  fontWeight: "600"
+                                }}>
+                                  Instagram
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+                        ) : loading ? (
+                          // ⏳ While fetching
+                          <div> 
+                            {/* Back button */}
+                            <button
+                              onClick={() => {
+                                setSelectedMentionPlatform(null);
+                                setMentions([]);
+                                setSelectedMessage(null);
+                              }}
+                              style={{
+                                padding: "8px 16px",
+                                marginBottom: "15px",
+                                borderRadius: "8px",
+                                border: "none",
+                                background: darkMode ? "#1e3a5f" : "#e6eefc",
+                                color: darkMode ? "#e6eefc" : "#0b1c3a",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                              }}
+                            >
+                              ← Back to Platforms
+                            </button>
+                            <div
+                              style={{
+                                textAlign: "center",
+                                paddingTop: 30,
+                                color: darkMode ? "#9aa7c7" : "#6b7280",
+                              }}
+                            >
+                              <MessageSquare
+                                style={{ width: 48, height: 48, margin: "0 auto 12px" }}
+                              />
+                              <div>Loading {selectedMentionPlatform} mentions...</div>
+                            </div>
+                          </div>
+                        ) : mentions.length === 0 ? (
+                          // 🟢 Logged in but no mentions
+                          <div> 
+                            {/* Back button */}
+                             <button
+                              onClick={() => {
+                                setSelectedMentionPlatform(null);
+                                setMentions([]);
+                                setSelectedMessage(null);
+                              }}
+                              style={{
+                                padding: "8px 16px",
+                                marginBottom: "15px",
+                                borderRadius: "8px",
+                                border: "none",
+                                background: darkMode ? "#1e3a5f" : "#e6eefc",
+                                color: darkMode ? "#e6eefc" : "#0b1c3a",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                              }}
+                            >
+                              ← Back to Platforms
+                            </button>
+                            <div
+                              style={{
+                                textAlign: "center",
+                                paddingTop: 30,
+                                color: darkMode ? "#9aa7c7" : "#6b7280",
+                              }}
+                            >
+                              <MessageSquare
+                                style={{ width: 48, height: 48, margin: "0 auto 12px" }}
+                              />
+                              <div>No {selectedMentionPlatform} mentions yet</div>
+                              <div style={{ fontSize: 13, marginTop: 6 }}>
+                                If you expected data, check Graph API permissions in backend.
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          // ✅ Logged in and mentions available
+                          <div> 
+                            {/* Back button */}
+                             <button
+                              onClick={() => {
+                                setSelectedMentionPlatform(null);
+                                setMentions([]);
+                                setSelectedMessage(null);
+                              }}
+                              style={{
+                                padding: "8px 16px",
+                                marginBottom: "15px",
+                                borderRadius: "8px",
+                                border: "none",
+                                background: darkMode ? "#1e3a5f" : "#e6eefc",
+                                color: darkMode ? "#e6eefc" : "#0b1c3a",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                              }}
+                            >
+                              ← Back to Platforms
+                            </button>
+                            {mentions.map((m) => (
+                            <div
+                              key={m.id}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => setSelectedMessage(m)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  setSelectedMessage(m);
+                                }
+                              }}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                                padding: 12,
+                                borderRadius: 10,
+                                cursor: "pointer",
+                                marginBottom: 10,
+                                background:
+                                  selectedMessage?.id === m.id
+                                    ? "#006CFC"
+                                    : darkMode
+                                      ? "#0b1a2b"
+                                      : "#eef7ff",
+                                color:
+                                  selectedMessage?.id === m.id
+                                    ? "#fff"
+                                    : darkMode
+                                      ? "#e6eefc"
+                                      : "#0b1c3a",
+                                transition: "background 0.2s ease",
+                              }}
+                            > 
+                              {/* ✅ Avatar */}
+                               {m.avatar ? (
+                                <img
+                                  src={m.avatar}
+                                  alt={m.username}
+                                  style={{
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: "50%",
+                                    objectFit: "cover",
+                                  }}
+                                />
+                              ) : (
+                                <div
+                                  style={{
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: "50%",
+                                    background: "#c7d9ff",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {m.username ? m.username.charAt(0).toUpperCase() : "U"}
+                                </div>
+                              )} 
+        
+                              {/* ✅ Text section */}
+                               <div style={{ flex: 1, minWidth: 0 }}>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <strong
+                                    style={{
+                                      whiteSpace: "nowrap",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                    }}
+                                  >
+                                    {m.username}
+                                  </strong>
+                                  <small
+                                    style={{
+                                      color: darkMode ? "#94a3b8" : "#6b7280",
+                                      fontSize: 12,
+                                      marginLeft: 8,
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    {m.time ? new Date(m.time).toLocaleString() : "Unknown"}
+                                  </small>
+                                </div>
+                                <div
+                                  style={{
+                                    marginTop: 6,
+                                    fontSize: 14,
+                                    display: "-webkit-box",
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: "vertical",
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  {m.message || m.content || m.text || "(no text)"}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          </div>
+                        )}
+                      </>
+                    )} 
+        
+                    {activeTab === "dms" && (
+                      <>
+                        {!fbUser ? (
+                          <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
+                            <Mail style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
+                            <div>Please login to view messages</div>
+                            <div style={{ fontSize: 13, marginTop: 6 }}>Click the login button above</div>
+                          </div>
+                        ) : !selectedPlatform ? (
+                          /* Platform Selection for DMs */
+                          <div style={{
+                            background: darkMode ? '#1f2937' : '#f9fafb',
+                            padding: 20,
+                            borderRadius: 12,
+                            marginBottom: 20,
+                            textAlign: 'center'
+                          }}>
+                            <h4 style={{ marginBottom: 16 }}>Select Platform for Direct Messages</h4>
+                            <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+                              <button
+                                onClick={() => setSelectedPlatform('facebook')}
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  gap: 12,
+                                  padding: '24px 32px',
+                                  borderRadius: 12,
+                                  border: '2px solid #1877F2',
+                                  background: darkMode ? '#1e3a8a' : '#eff6ff',
+                                  color: darkMode ? '#fff' : '#1e40af',
+                                  cursor: 'pointer',
+                                  minWidth: 150,
+                                  transition: 'all 0.2s'
+                                }}
+                              >
+                                <img src={facebookIcon} alt="Facebook" style={{ width: 48, height: 48 }} />
+                                <div style={{ fontWeight: 600, fontSize: 16 }}>Facebook</div>
+                              </button>
+        
+                              <button
+                                onClick={() => setSelectedPlatform('instagram')}
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  gap: 12,
+                                  padding: '24px 32px',
+                                  borderRadius: 12,
+                                  border: '2px solid #E4405F',
+                                  background: darkMode ? '#831843' : '#fce7f3',
+                                  color: darkMode ? '#fff' : '#9f1239',
+                                  cursor: 'pointer',
+                                  minWidth: 150,
+                                  transition: 'all 0.2s'
+                                }}
+                              >
+                                <img src={instagramIcon} alt="Instagram" style={{ width: 48, height: 48 }} />
+                                <div style={{ fontWeight: 600, fontSize: 16 }}>Instagram</div>
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            {/* Header with Back button and platform title */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <button
+                                  onClick={() => {
+                                    setSelectedPlatform(null);
+                                    setDms([]);
+                                    setSelectedDm(null);
+                                    setSelectedPage(null);
+                                  }}
+                                  style={{
+                                    padding: '6px 12px',
+                                    borderRadius: 8,
+                                    border: '1px solid #d1d5db',
+                                    background: darkMode ? '#374151' : '#fff',
+                                    color: darkMode ? '#f3f4f6' : '#111827',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  ← Back
+                                </button>
+                                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <img 
+                                    src={selectedPlatform === 'instagram' ? instagramIcon : facebookIcon} 
+                                    alt={selectedPlatform} 
+                                    style={{ width: 24, height: 24 }} 
+                                  />
+                                  {selectedPlatform === 'instagram' ? 'Instagram' : 'Facebook'} Messages
+                                </h3>
+                              </div>
+                            </div>
+        
+                            {/* Page Selector for Facebook DMs only */}
+                            {selectedPlatform === 'facebook' && (
+                              <div style={{ marginBottom: 16 }}>
+                                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
+                                  Select Page: * {pages.length > 0 && `(${pages.length} page${pages.length > 1 ? 's' : ''} available)`}
+                                </label>
+                                {pages.length === 0 ? (
+                                  <div style={{
+                                    padding: 16,
+                                    borderRadius: 8,
+                                    background: darkMode ? '#374151' : '#fef2f2',
+                                    color: darkMode ? '#f87171' : '#dc2626',
+                                    textAlign: 'center'
+                                  }}>
+                                    ⚠️ No Facebook pages found. Please make sure you manage at least one Facebook page.
+                                  </div>
+                                ) : (
+                                  <div style={{ display: 'flex', gap: 8 }}>
+                                    <select
+                                      value={selectedPage?.id || ""}
+                                      onChange={(e) => {
+                                        const page = pages.find(p => p.id === e.target.value);
+                                        console.log("📄 Page selected from dropdown:", page);
+                                        setSelectedPage(page);
+                                      }}
+                                      style={{
+                                        flex: 1,
+                                        padding: "12px",
+                                        borderRadius: "8px",
+                                        border: "1px solid #d1d5db",
+                                        background: darkMode ? "#374151" : "#fff",
+                                        color: darkMode ? "#f3f4f6" : "#111827",
+                                      }}
+                                    >
+                                      <option value="">-- Select Page --</option>
+                                      {pages.map(page => (
+                                        <option key={page.id} value={page.id}>{page.name}</option>
+                                      ))}
+                                    </select>
+                                  {selectedPage?.id && (
+                                    <button
+                                      onClick={() => {
+                                        console.log("🔄 Manual fetch DMs clicked");
+                                        fetchDms();
+                                      }}
+                                      style={{
+                                        padding: "12px 20px",
+                                        borderRadius: "8px",
+                                        border: "none",
+                                        background: "#006CFC",
+                                        color: "#fff",
+                                        cursor: "pointer",
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      Load DMs
+                                    </button>
+                                  )}
+                                </div>
+                                )}
+                              </div>
+                            )}
+        
+                        {/* 🔽 Messages List */}
+                        {!selectedPage && selectedPlatform === 'facebook' ? (
+                          <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
+                            <Mail style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
+                            <div>Please select a page</div>
+                            <div style={{ fontSize: 13, marginTop: 6 }}>Choose a page from the dropdown above</div>
+                          </div>
+                        ) : selectedPlatform === 'instagram' ? (
+                          <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
+                            <Mail style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
+                            <div>Instagram DMs coming soon</div>
+                            <div style={{ fontSize: 13, marginTop: 6 }}>Instagram direct messages feature will be available soon</div>
+                          </div>
+                        ) : dms.length === 0 ? (
+                          <div
+                            style={{
+                              textAlign: "center",
+                              paddingTop: 30,
+                              color: darkMode ? "#9aa7c7" : "#6b7280",
+                            }}
+                          >
+                            <Mail style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
+                            <div>No messages yet</div>
+                            <div style={{ fontSize: 13, marginTop: 6 }}>
+                              Select a page and click Refresh
+                            </div>
+                          </div>
+                        ) : (
+                          dms.map((dm) => (
+                            <div
+                              key={dm.id}
+                              onClick={() => handleDmClick(dm)}
+                              style={{
+                                display: "flex",
+                                gap: 10,
+                                padding: 12,
+                                borderRadius: 10,
+                                cursor: "pointer",
+                                marginBottom: 10,
+                                background:
+                                  selectedDm?.id === dm.id
+                                    ? "#006CFC"
+                                    : darkMode
+                                      ? "#0b1a2b"
+                                      : "#eef7ff",
+                                color:
+                                  selectedDm?.id === dm.id
+                                    ? "#fff"
+                                    : darkMode
+                                      ? "#e6eefc"
+                                      : "#0b1c3a",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: 44,
+                                  height: 44,
+                                  borderRadius: 8,
+                                  backgroundColor: darkMode ? "#1e3a5f" : "#e0e7ff",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  overflow: "hidden",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {dm.avatar ? (
+                                  <img
+                                    src={dm.avatar}
+                                    alt={dm.username}
+                                    style={{
+                                      width: "100%",
+                                      height: "100%",
+                                      objectFit: "cover",
+                                    }}
+                                    onError={(e) => {
+                                      e.target.style.display = "none";
+                                      e.target.parentElement.innerHTML = `<div style="color: ${darkMode ? '#fff' : '#4f46e5'}; font-weight: 600; font-size: 18px;">${dm.username?.charAt(0)?.toUpperCase() || '?'}</div>`;
+                                    }}
+                                  />
+                                ) : (
+                                  <div style={{ color: darkMode ? "#fff" : "#4f46e5", fontWeight: 600, fontSize: 18 }}>
+                                    {dm.username?.charAt(0)?.toUpperCase() || "?"}
+                                  </div>
+                                )}
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <strong>{dm.username}</strong>
+                                  {dm.unread > 0 && (
+                                    <span
+                                      style={{
+                                        background: "#ef4444",
+                                        color: "white",
+                                        borderRadius: "50%",
+                                        width: 20,
+                                        height: 20,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        fontSize: 12,
+                                      }}
+                                    >
+                                      {dm.unread}
+                                    </span>
+                                  )}
+                                </div>
+                                <div
+                                  style={{
+                                    marginTop: 6,
+                                    fontSize: 14,
+                                    display: "-webkit-box",
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: "vertical",
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  {dm.lastMessage || "(no message)"}
+                                </div>
+                                <div
+                                  style={{
+                                    marginTop: 4,
+                                    fontSize: 12,
+                                    color: darkMode ? "#94a3b8" : "#6b7280",
+                                  }}
+                                >
+                                  {new Date(dm.time).toLocaleString()}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                          </>
+                        )}
+                      </>
+                    )}
+        
+        
+                    {activeTab === "posts" && (
+                      <div style={{ padding: 16 }}>
+                        {!fbUser ? (
+                          <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
+                            <Image style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
+                            <div>Please login to view and create posts</div>
+                            <div style={{ fontSize: 13, marginTop: 6 }}>Click the login button above</div>
+                          </div>
+                        ) : (
+                          <>
+                            {/* Platform Selection - Shows FIRST when posts tab is clicked */}
+                            {!selectedPlatform && (
+                              <div style={{
+                                background: darkMode ? '#1f2937' : '#f9fafb',
+                                padding: 20,
+                                borderRadius: 12,
+                                marginBottom: 20,
+                                textAlign: 'center'
+                              }}>
+                                <h4 style={{ marginBottom: 16 }}>Select Platform</h4>
+                                <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+                                  <button
+                                    onClick={() => setSelectedPlatform('facebook')}
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      gap: 12,
+                                      padding: '24px 32px',
+                                      borderRadius: 12,
+                                      border: '2px solid #1877F2',
+                                      background: darkMode ? '#1e3a8a' : '#eff6ff',
+                                      color: darkMode ? '#fff' : '#1e40af',
+                                      cursor: 'pointer',
+                                      minWidth: 150,
+                                      transition: 'all 0.2s'
+                                    }}
+                                  >
+                                    <img src={facebookIcon} alt="Facebook" style={{ width: 48, height: 48 }} />
+                                    <div style={{ fontWeight: 600, fontSize: 16 }}>Facebook</div>
+                                  </button>
+        
+                                  <button
+                                    onClick={() => setSelectedPlatform('instagram')}
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      gap: 12,
+                                      padding: '24px 32px',
+                                      borderRadius: 12,
+                                      border: '2px solid #E4405F',
+                                      background: darkMode ? '#831843' : '#fce7f3',
+                                      color: darkMode ? '#fff' : '#9f1239',
+                                      cursor: 'pointer',
+                                      minWidth: 150,
+                                      transition: 'all 0.2s'
+                                    }}
+                                  >
+                                    <img src={instagramIcon} alt="Instagram" style={{ width: 48, height: 48 }} />
+                                    <div style={{ fontWeight: 600, fontSize: 16 }}>Instagram</div>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+        
+                            {/* Facebook Platform View - Shows posts list + create button */}
+                            {selectedPlatform === 'facebook' && !showPostForm && (
+                              <>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedPlatform(null);
+                                        setPosts([]);
+                                        setIgPosts([]);
+                                        setSelectedPost(null);
+                                        setShowPostForm(false);
+                                      }}
+                                      style={{
+                                        padding: '6px 12px',
+                                        borderRadius: 8,
+                                        border: '1px solid #d1d5db',
+                                        background: darkMode ? '#374151' : '#fff',
+                                        color: darkMode ? '#f3f4f6' : '#111827',
+                                        cursor: 'pointer',
+                                      }}
+                                    >
+                                      ← Back
+                                    </button>
+                                    <h3 style={{ margin: 0 }}>📘 Facebook Posts</h3>
+                                  </div>
+                                  <button
+                                    onClick={() => setShowPostForm(true)}
+                                    style={{
+                                      padding: '6px 12px',
+                                      borderRadius: 8,
+                                      border: 'none',
+                                      background: '#1877F2',
+                                      color: '#fff',
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    + Create Post
+                                  </button>
+                                </div>
+        
+                                {/* Facebook Posts List */}
+                                {posts.length === 0 ? (
+                                  <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
+                                    <Image style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
+                                    <div>No Facebook posts yet</div>
+                                    <div style={{ fontSize: 13, marginTop: 6 }}>Click "Create Post" to get started</div>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    {posts.map((post) => (
+                                      <div
+                                        key={post.id}
+                                        style={{
+                                          padding: 16,
+                                          borderRadius: 10,
+                                          marginBottom: 12,
+                                          background: darkMode ? '#1f2937' : '#fff',
+                                          border: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb'),
+                                        }}
+                                      >
+                                        {/* Post Header */}
+                                        <div 
+                                          onClick={() => setSelectedPost(post)}
+                                          style={{ 
+                                            display: 'flex', 
+                                            justifyContent: 'space-between', 
+                                            alignItems: 'center', 
+                                            marginBottom: 8,
+                                            cursor: "pointer"
+                                          }}
+                                        >
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            {post.authorImage && (
+                                              <img
+                                                src={post.authorImage}
+                                                alt={post.authorName}
+                                                style={{
+                                                  width: 32,
+                                                  height: 32,
+                                                  borderRadius: '50%',
+                                                  objectFit: 'cover'
+                                                }}
+                                              />
+                                            )}
+                                            <div>
+                                              <strong style={{ fontSize: 16 }}>{post.caption || post.content.slice(0, 30)}</strong>
+                                              <div style={{ fontSize: 12, color: darkMode ? '#94a3b8' : '#6b7280', marginTop: 4 }}>
+                                                Posted by: {post.authorName || post.page}
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <small style={{ color: darkMode ? '#94a3b8' : '#6b7280', fontSize: 12 }}>
+                                            {new Date(post.timestamp).toLocaleDateString()}
+                                          </small>
+                                        </div>
+        
+                                        {/* Post Content */}
+                                        <div onClick={() => setSelectedPost(post)} style={{ cursor: "pointer" }}>
+                                          <p style={{ marginBottom: 12, color: darkMode ? '#d1d5db' : '#374151' }}>
+                                            {post.content.length > 150 ? post.content.slice(0, 150) + "..." : post.content}
+                                          </p>
+                                          {post.mediaUrl && (
+                                            <img
+                                              src={post.mediaUrl}
+                                              alt="Post"
+                                              style={{
+                                                width: '100%',
+                                                maxHeight: 300,
+                                                objectFit: 'cover',
+                                                borderRadius: 8,
+                                                marginTop: 8
+                                              }}
+                                              onError={(e) => {
+                                                console.log("Image load error for:", post.mediaUrl);
+                                                e.target.style.display = 'none';
+                                              }}
+                                            />
+                                          )}
+                                        </div>
+        
+                                        {/* Likes and Comments Stats */}
+                                        <div style={{
+                                          display: 'flex',
+                                          justifyContent: 'space-between',
+                                          alignItems: 'center',
+                                          marginTop: 12,
+                                          paddingTop: 12,
+                                          borderTop: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb'),
+                                          fontSize: 13,
+                                          color: darkMode ? '#94a3b8' : '#6b7280'
+                                        }}>
+                                          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                            <ThumbsUp size={14} />
+                                            <span>{post.likes?.summary?.total_count || 0} Likes</span>
+                                            {post.reactions?.summary?.total_count > 0 && post.reactions?.summary?.total_count !== post.likes?.summary?.total_count && (
+                                              <span style={{ marginLeft: 4 }}>
+                                                · {post.reactions?.summary?.total_count} Reactions
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div>
+                                            {post.comments?.summary?.total_count > 0 && (
+                                              <span>{post.comments.summary.total_count} Comment{post.comments.summary.total_count !== 1 ? 's' : ''}</span>
+                                            )}
+                                          </div>
+                                        </div>
+        
+                                        {/* Action Buttons */}
+                                        <div style={{
+                                          display: 'flex',
+                                          gap: 8,
+                                          marginTop: 8,
+                                          paddingTop: 8,
+                                          borderTop: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb')
+                                        }}>
+                                          <button
+                                            onClick={() => handleToggleComments(post.id)}
+                                            style={{
+                                              flex: 1,
+                                              padding: '8px 12px',
+                                              borderRadius: 6,
+                                              background: showCommentsForPost === post.id ? (darkMode ? '#374151' : '#f3f4f6') : 'transparent',
+                                              border: 'none',
+                                              color: darkMode ? '#d1d5db' : '#374151',
+                                              cursor: 'pointer',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              gap: 6,
+                                              fontSize: 14,
+                                              fontWeight: 500
+                                            }}
+                                          >
+                                            <MessageCircle size={16} />
+                                            {showCommentsForPost === post.id ? 'Hide Comments' : 'View Comments'}
+                                          </button>
+                                        </div>
+        
+                                        {/* Comments Section */}
+                                        {showCommentsForPost === post.id && (
+                                         <div
+                                           style={{
+                                             marginTop: 12,
+                                             paddingTop: 12,
+                                             borderTop: `1px solid ${darkMode ? "#374151" : "#e5e7eb"}`
+                                           }}
+                                         >
+                                           {loadingComments ? (
+                                             <div
+                                               style={{
+                                                 textAlign: "center",
+                                                 padding: 20,
+                                                 color: darkMode ? "#94a3b8" : "#6b7280"
+                                               }}
+                                             >
+                                               Loading comments...
+                                             </div>
+                                           ) : commentsData[post.id]?.length > 0 ? (
+                                             <div>
+                                               {commentsData[post.id].map((comment) => (
+                                                 <div
+                                                   key={comment.id}
+                                                   style={{
+                                                     padding: 12,
+                                                     background: darkMode ? "#111827" : "#f9fafb",
+                                                     borderRadius: 8,
+                                                     marginBottom: 8
+                                                   }}
+                                                 >
+                                                   {/* 🧍 Main Comment Header */}
+                                                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                                                     <div>
+                                                       <strong style={{ fontSize: 14 }}>{comment.from?.name || "Unknown User"}</strong>
+                                                       <div style={{ fontSize: 12, color: darkMode ? "#94a3b8" : "#6b7280", marginTop: 2 }}>
+                                                         {new Date(comment.created_time).toLocaleString()}
+                                                       </div>
+                                                     </div>
+                                                     {comment.like_count > 0 && (
+                                                       <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: darkMode ? "#94a3b8" : "#6b7280" }}>
+                                                         <ThumbsUp size={12} /> {comment.like_count}
+                                                       </div>
+                                                     )}
+                                                   </div>
+                                       
+                                                   {/* 🗨️ Comment Message */}
+                                                   <p style={{ fontSize: 14, color: darkMode ? "#d1d5db" : "#374151", marginBottom: 8 }}>
+                                                     {comment.message}
+                                                   </p>
+                                       
+                                                   {/* 💬 Reply Button */}
+                                                   <button
+                                                     onClick={() => {
+                                                       if (replyingToComment === comment.id) {
+                                                         setReplyingToComment(null);
+                                                         setCommentReplyText("");
+                                                       } else {
+                                                         setReplyingToComment(comment.id);
+                                                       }
+                                                     }}
+                                                     style={{
+                                                       padding: "4px 12px",
+                                                       borderRadius: 4,
+                                                       background: "transparent",
+                                                       border: "none",
+                                                       color: "#3b82f6",
+                                                       cursor: "pointer",
+                                                       fontSize: 13,
+                                                       fontWeight: 500
+                                                     }}
+                                                   >
+                                                     {replyingToComment === comment.id ? "Cancel" : "Reply"}
+                                                   </button>
+                                       
+                                                   {/* ✏️ Reply Input */}
+                                                   {replyingToComment === comment.id && (
+                                                     <div style={{ marginTop: 8 }}>
+                                                       <div style={{ display: "flex", gap: 8 }}>
+                                                         <input
+                                                           type="text"
+                                                           value={commentReplyText}
+                                                           onChange={(e) => setCommentReplyText(e.target.value)}
+                                                           placeholder="Write a reply..."
+                                                           style={{
+                                                             flex: 1,
+                                                             padding: "8px 12px",
+                                                             borderRadius: 6,
+                                                             border: `1px solid ${darkMode ? "#374151" : "#d1d5db"}`,
+                                                             background: darkMode ? "#1f2937" : "#fff",
+                                                             color: darkMode ? "#f3f4f6" : "#111827",
+                                                             fontSize: 14
+                                                           }}
+                                                           onKeyPress={(e) => {
+                                                             if (e.key === "Enter") handleReplyToComment(comment.id, post.id);
+                                                           }}
+                                                         />
+                                                         <button
+                                                           onClick={() => handleReplyToComment(comment.id, post.id)}
+                                                           disabled={!commentReplyText.trim() || loadingComments}
+                                                           style={{
+                                                             padding: "8px 16px",
+                                                             borderRadius: 6,
+                                                             background: commentReplyText.trim() ? "#3b82f6" : (darkMode ? "#374151" : "#e5e7eb"),
+                                                             border: "none",
+                                                             color: commentReplyText.trim() ? "#fff" : (darkMode ? "#6b7280" : "#9ca3af"),
+                                                             cursor: commentReplyText.trim() ? "pointer" : "not-allowed",
+                                                             fontSize: 14,
+                                                             fontWeight: 500
+                                                           }}
+                                                         >
+                                                           <Send size={14} /> Send
+                                                         </button>
+                                                       </div>
+                                                     </div>
+                                                   )}
+                                       
+                                                   {/* 🧵 Nested Replies */}
+                                                   {comment.comments?.data?.length > 0 && (
+                                                     <div
+                                                       style={{
+                                                         marginTop: 12,
+                                                         marginLeft: 40,
+                                                         paddingLeft: 16,
+                                                         borderLeft: `2px solid ${darkMode ? "#374151" : "#e5e7eb"}`
+                                                       }}
+                                                     >
+                                                       {comment.comments.data.map((reply) => (
+                                                         <div key={reply.id} style={{ marginBottom: 12 }}>
+                                                           <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                                                             <div
+                                                               style={{
+                                                                 width: 28,
+                                                                 height: 28,
+                                                                 borderRadius: "50%",
+                                                                 background: "#93c5fd",
+                                                                 display: "flex",
+                                                                 alignItems: "center",
+                                                                 justifyContent: "center",
+                                                                 color: "#1e40af",
+                                                                 fontWeight: 600,
+                                                                 fontSize: 12,
+                                                                 flexShrink: 0
+                                                               }}
+                                                             >
+                                                               {reply.from?.name?.charAt(0).toUpperCase() || "U"}
+                                                             </div>
+                                                             <div style={{ flex: 1 }}>
+                                                               <div
+                                                                 style={{
+                                                                   background: darkMode ? "#1f2937" : "#f3f4f6",
+                                                                   padding: "8px 12px",
+                                                                   borderRadius: 8
+                                                                 }}
+                                                               >
+                                                                 <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>
+                                                                   {reply.from?.name || "Unknown User"}
+                                                                 </div>
+                                                                 <p style={{ fontSize: 13, margin: 0 }}>{reply.message}</p>
+                                                               </div>
+                                                               <div
+                                                                 style={{
+                                                                   marginTop: 4,
+                                                                   fontSize: 11,
+                                                                   color: darkMode ? "#9ca3af" : "#6b7280",
+                                                                   display: "flex",
+                                                                   gap: 8,
+                                                                   alignItems: "center"
+                                                                 }}
+                                                               >
+                                                                 <span>{new Date(reply.created_time).toLocaleString()}</span>
+                                                                 {reply.like_count > 0 && (
+                                                                   <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                                                     <ThumbsUp size={11} /> {reply.like_count}
+                                                                   </span>
+                                                                 )}
+                                                               </div>
+                                                             </div>
+                                                           </div>
+                                                         </div>
+                                                       ))}
+                                                     </div>
+                                                   )}
+                                                 </div>
+                                               ))}
+                                             </div>
+                                           ) : (
+                                             <div style={{ textAlign: "center", padding: 20, color: darkMode ? "#94a3b8" : "#6b7280" }}>
+                                               No comments yet. Be the first to comment!
+                                             </div>
+                                           )}
+                                         </div>
+                                       )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            )}
+        
+        {showPostForm && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(0,0,0,0.6)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 9999,
+              backdropFilter: "blur(4px)",
+              overflowX: "hidden", // ✅ prevent left-right scroll
+              overflowY: "auto",   // ✅ allow vertical scroll if needed
+            }}
+          >
+            <div
+              style={{
+                background: darkMode ? "#1f2937" : "#ffffff",
+                width: "90%",
+                maxWidth: 520,
+                borderRadius: 16,
+                boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+                padding: 24,
+                position: "relative",
+                overflowY: "auto",
+                overflowX: "hidden", // ✅ stop horizontal scroll inside card
+                maxHeight: "90vh",
+              }}
+            >
+              {/* Close Button */}
               <button
                 onClick={() => {
-                  // Refresh based on selected platform
-                  if (activeTab === "mentions") {
-                    if (selectedMentionPlatform === 'facebook') fetchFacebookMentions();
-                    else if (selectedMentionPlatform === 'instagram') fetchInstagramMentions();
-                  } else if (activeTab === "dms") {
-                    fetchDms();
-                  } else if (activeTab === "posts") {
-                    if (selectedPlatform === 'facebook') fetchPosts();
-                    else if (selectedPlatform === 'instagram') fetchIgPosts();
-                  }
+                  setShowPostForm(false);
+                  setSelectedPlatform(null);
                 }}
                 style={{
-                  padding: "6px 10px",
-                  borderRadius: 8,
+                  position: "absolute",
+                  top: 12,
+                  right: 16,
+                  background: "transparent",
                   border: "none",
-                  background: "#006CFC",
-                  color: "#fff",
+                  fontSize: 22,
+                  cursor: "pointer",
+                  color: darkMode ? "#9ca3af" : "#374151",
+                }}
+              >
+                ✕
+              </button>
+        
+              {/* Facebook Post Creation Form */}
+              {selectedPlatform === "facebook" && (
+                <div>
+                  <h3 style={{ marginBottom: 16, textAlign: "center" }}>Create Facebook Post</h3>
+        
+                  {/* Post Content */}
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
+                      Write Post: *
+                    </label>
+                    <textarea
+                      value={postContent}
+                      onChange={(e) => setPostContent(e.target.value)}
+                      placeholder="Write your post content here..."
+                      rows={4}
+                      style={{
+                        width: "100%",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        border: "1px solid #d1d5db",
+                        background: darkMode ? "#374151" : "#fff",
+                        color: darkMode ? "#f3f4f6" : "#111827",
+                        resize: "vertical",
+                      }}
+                    />
+                  </div>
+        
+                  {/* Page Selector */}
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
+                      Select Page: *
+                    </label>
+                    <select
+                      value={selectedPage?.id || ""}
+                      onChange={(e) => {
+                        const page = pages.find((p) => p.id === e.target.value);
+                        setSelectedPage(page || null);
+                        setDms([]);
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        border: "1px solid #d1d5db",
+                        background: darkMode ? "#374151" : "#fff",
+                        color: darkMode ? "#f3f4f6" : "#111827",
+                      }}
+                    >
+                      <option value="">-- Select Page --</option>
+                      {pages.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+        
+                  {/* Media Upload */}
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
+                      Upload Media (optional):
+                    </label>
+                    <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                      <label
+                        style={{
+                          padding: "10px 16px",
+                          border: selectedPhoto ? "2px solid #10b981" : "1px solid #d1d5db",
+                          borderRadius: "8px",
+                          background: darkMode ? "#4b5563" : "#e5e7eb",
+                          cursor: selectedVideo ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          disabled={!!selectedVideo}
+                          onChange={(e) => setSelectedPhoto(e.target.files[0])}
+                          style={{ display: "none" }}
+                        />
+                        {selectedPhoto ? "✓ Photo Selected" : "Upload Photo"}
+                      </label>
+        
+                      <label
+                        style={{
+                          padding: "10px 16px",
+                          border: selectedVideo ? "2px solid #10b981" : "1px solid #d1d5db",
+                          borderRadius: "8px",
+                          background: darkMode ? "#4b5563" : "#e5e7eb",
+                          cursor: selectedPhoto ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="video/*"
+                          disabled={!!selectedPhoto}
+                          onChange={(e) => setSelectedVideo(e.target.files[0])}
+                          style={{ display: "none" }}
+                        />
+                        {selectedVideo ? "✓ Video Selected" : "Upload Video"}
+                      </label>
+                    </div>
+                  </div>
+        
+                  {/* Buttons */}
+                  <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+                    <button
+                      onClick={handleMakePost}
+                      disabled={saving}
+                      style={{
+                        padding: "12px 20px",
+                        border: "none",
+                        borderRadius: "8px",
+                        background: saving ? "#6b7280" : "#10b981",
+                        color: "white",
+                        cursor: saving ? "not-allowed" : "pointer",
+                        opacity: saving ? 0.7 : 1,
+                      }}
+                    >
+                      {saving ? "Posting..." : "Save Post"}
+                    </button>
+        
+                    <button
+                      onClick={() => {
+                        setShowPostForm(false);
+                        setSelectedPlatform(null);
+                      }}
+                      disabled={saving}
+                      style={{
+                        padding: "12px 20px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "8px",
+                        background: darkMode ? "#374151" : "#f9fafb",
+                        cursor: saving ? "not-allowed" : "pointer",
+                        opacity: saving ? 0.7 : 1,
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+        
+              {/* Instagram Post Creation Form */}
+              {selectedPlatform === "instagram" && (
+                <div>
+                  <h3 style={{ marginBottom: 16, textAlign: "center" }}>Create Instagram Post</h3>
+        
+                  {/* Image URL */}
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
+                      Image URL: *
+                    </label>
+                    <input
+                      type="text"
+                      value={igImageUrl}
+                      onChange={(e) => setIgImageUrl(e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                      style={{
+                        width: "100%",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        border: "1px solid #d1d5db",
+                        background: darkMode ? "#374151" : "#fff",
+                        color: darkMode ? "#f3f4f6" : "#111827",
+                      }}
+                    />
+                    <small
+                      style={{
+                        color: darkMode ? "#94a3b8" : "#6b7280",
+                        marginTop: 4,
+                        display: "block",
+                      }}
+                    >
+                      Direct link to the image you want to post
+                    </small>
+                  </div>
+        
+                  {/* Caption */}
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
+                      Caption (optional):
+                    </label>
+                    <textarea
+                      value={igCaption}
+                      onChange={(e) => setIgCaption(e.target.value)}
+                      placeholder="Write your Instagram caption here..."
+                      rows={4}
+                      style={{
+                        width: "100%",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        border: "1px solid #d1d5db",
+                        background: darkMode ? "#374151" : "#fff",
+                        color: darkMode ? "#f3f4f6" : "#111827",
+                        resize: "vertical",
+                      }}
+                    />
+                  </div>
+        
+                  {/* Tag Users */}
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
+                      Tag Users (optional):
+                    </label>
+                    <input
+                      type="text"
+                      value={igUsernames}
+                      onChange={(e) => setIgUsernames(e.target.value)}
+                      placeholder="username1, username2"
+                      style={{
+                        width: "100%",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        border: "1px solid #d1d5db",
+                        background: darkMode ? "#374151" : "#fff",
+                        color: darkMode ? "#f3f4f6" : "#111827",
+                      }}
+                    />
+                  </div>
+        
+                  {/* Buttons */}
+                  <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
+                    <button
+                      onClick={handleMakeInstagramPost}
+                      disabled={saving}
+                      style={{
+                        padding: "12px 20px",
+                        border: "none",
+                        borderRadius: "8px",
+                        background: saving ? "#6b7280" : "#E4405F",
+                        color: "white",
+                        cursor: saving ? "not-allowed" : "pointer",
+                        opacity: saving ? 0.7 : 1,
+                      }}
+                    >
+                      {saving ? "Posting to Instagram..." : "Post to Instagram"}
+                    </button>
+        
+                    <button
+                      onClick={() => {
+                        setShowPostForm(false);
+                        setSelectedPlatform(null);
+                        setIgImageUrl("");
+                        setIgCaption("");
+                        setIgUsernames("");
+                      }}
+                      disabled={saving}
+                      style={{
+                        padding: "12px 20px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "8px",
+                        background: darkMode ? "#374151" : "#f9fafb",
+                        cursor: saving ? "not-allowed" : "pointer",
+                        opacity: saving ? 0.7 : 1,
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
+        
+                            {/* Instagram Platform View - Shows posts list + create button */}
+                            {selectedPlatform === 'instagram' && !showPostForm && (
+                              <>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedPlatform(null);
+                                        setPosts([]);
+                                        setIgPosts([]);
+                                        setSelectedPost(null);
+                                        setShowPostForm(false);
+                                      }}
+                                      style={{
+                                        padding: '6px 12px',
+                                        borderRadius: 8,
+                                        border: '1px solid #d1d5db',
+                                        background: darkMode ? '#374151' : '#fff',
+                                        color: darkMode ? '#f3f4f6' : '#111827',
+                                        cursor: 'pointer',
+                                      }}
+                                    >
+                                      ← Back
+                                    </button>
+                                    <h3 style={{ margin: 0 }}>📷 Instagram Posts</h3>
+                                  </div>
+                                  <button
+                                    onClick={() => setShowPostForm(true)}
+                                    style={{
+                                      padding: '6px 12px',
+                                      borderRadius: 8,
+                                      border: 'none',
+                                      background: '#E4405F',
+                                      color: '#fff',
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    + Create Post
+                                  </button>
+                                </div>
+        
+              {loading ? (
+          <div
+            style={{
+              textAlign: "center",
+              paddingTop: 30,
+              color: darkMode ? "#9aa7c7" : "#6b7280",
+            }}
+          >
+            <div>Loading Instagram posts...</div>
+          </div>
+        ) : igPosts.length === 0 ? (
+          <div
+            style={{
+              textAlign: "center",
+              paddingTop: 30,
+              color: darkMode ? "#9aa7c7" : "#6b7280",
+            }}
+          >
+            <Image style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
+            <div>No Instagram posts yet</div>
+            <div style={{ fontSize: 13, marginTop: 6 }}>
+              Click "Create Post" to get started
+            </div>
+          </div>
+        ) : (
+          <div>
+            {igPosts.map((post) => (
+              <div
+                key={post.id}
+                 onClick={() => setSelectedPost(post)}
+                style={{
+                  padding: 16,
+                  borderRadius: 10,
+                  marginBottom: 12,
+                  background: darkMode ? "#1f2937" : "#fff",
+                  border: "1px solid " + (darkMode ? "#374151" : "#e5e7eb"),
                   cursor: "pointer",
                 }}
               >
-                {loading ? "Loading..." : "Refresh"}
-              </button>
-            </div>
-
-            {/* ✅ Show IG User ID here */}
-            {igUserId && (
-              <div style={{ fontSize: 12, color: darkMode ? "#9aa7c7" : "#374151", marginBottom: 8 }}>
-                ✅ Linked Instagram ID: <strong>{igUserId}</strong>
+                {/* 🖼️ Post Header */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  <strong style={{ fontSize: 16 }}>
+                    {post.caption?.slice(0, 50) || ""}
+                  </strong>
+                  <small
+                    style={{
+                      color: darkMode ? "#94a3b8" : "#6b7280",
+                      fontSize: 12,
+                    }}
+                  >
+                    {new Date(post.timestamp).toLocaleDateString()}
+                  </small>
+                </div>
+        
+                {/* 📝 Caption */}
+                <p
+                  style={{
+                    marginBottom: 12,
+                    color: darkMode ? "#d1d5db" : "#374151",
+                    fontSize: 14,
+                  }}
+                >
+                  {post.caption && post.caption.length > 150
+                    ? post.caption.slice(0, 150) + "..."
+                    : post.caption}
+                </p>
+        
+                {/* 🖼️ Image or Video */}
+                {post.mediaUrl && post.mediaType === "IMAGE" && (
+                  <img
+                    src={post.mediaUrl}
+                    alt="Instagram Post"
+                    style={{
+                      width: "100%",
+                      maxHeight: 300,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      marginTop: 8,
+                    }}
+                    onError={(e) => {
+                      console.log("Image load error for:", post.mediaUrl);
+                      e.target.style.display = "none";
+                    }}
+                  />
+                )}
+        
+                {post.mediaType === "VIDEO" && (
+                  <div
+                    style={{
+                      padding: 16,
+                      background: darkMode ? "#0f172a" : "#f1f5f9",
+                      borderRadius: 8,
+                      textAlign: "center",
+                      marginTop: 8,
+                    }}
+                  >
+                    🎥 Video Post
+                  </div>
+                )}
               </div>
-            )}
-
-            {/* {activeTab === "mentions" && (
-              <>
-                {!fbUser ? (
-                  <div style={{ textAlign: "center", paddingTop: 30, color: darkMode ? "#9aa7c7" : "#6b7280" }}>
-                    <MessageSquare style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                    <div>Please login to view mentions</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>Click the login button above</div>
-                  </div>
-                ) : mentions.length === 0 ? (
-                  <div style={{ textAlign: "center", paddingTop: 30, color: darkMode ? "#9aa7c7" : "#6b7280" }}>
-                    <MessageSquare style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                    <div>No mentions yet</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>{fbUser
-                      ? "If you expected data, check Graph API permissions in backend."
-                      : "Click Login to fetch mentions"}</div>
-                  </div>
-                ) : (
-                  mentions.map((m) => (
-                    <div
-                      key={m.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setSelectedMessage(m)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          setSelectedMessage(m);
-                        }
-                      }}
-                      style={{
-                        display: "flex",
-                        gap: 10,
-                        padding: 12,
-                        borderRadius: 10,
-                        cursor: "pointer",
-                        marginBottom: 10,
-                        background: selectedMessage?.id === m.id ? "#006CFC" : darkMode ? "#0b1a2b" : "#eef7ff",
-                        color: selectedMessage?.id === m.id ? "#fff" : darkMode ? "#e6eefc" : "#0b1c3a",
-                      }}
-                    >
-                      {m.avatar ? (
-                        <img
-                          src={m.avatar}
-                          alt={m.username}
-                          style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover" }}
-                        />
-                      ) : (
-                        <div style={{ width: 44, height: 44, borderRadius: 8, background: "#c7d9ff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
-                          {m.username ? m.username.charAt(0).toUpperCase() : "U"}
-                        </div>
-                      )}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <strong>{m.username}<span style={{ fontSize: 12, opacity: 0.7 }}>({m.platform})</span></strong>
-                          <small style={{ color: darkMode ? "#94a3b8" : "#6b7280", fontSize: 12 }}>
-                            {m.time ? new Date(m.time).toLocaleString() : "Unknown time"}
-                          </small>
-                        </div>
-                        <div style={{ marginTop: 6, fontSize: 14, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{m.message || m.content || m.text || "(no text)"}</div>
-                        {m.replies && m.replies.length > 0 && (
-                          <div style={{ marginTop: 4, fontSize: 12, color: darkMode ? "#88a0c7" : "#4b5563", display: "flex", alignItems: "center", gap: 4 }}>
-                            <MessageSquare size={12} /> {m.replies.length} {m.replies.length > 1 ? "replies" : "reply"}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </>
-            )} */}
-
-            {activeTab === "mentions" && (
-              <>
-                {!fbUser ? (
-                  // 🚫 Login required
-                  <div
-                    style={{
-                      textAlign: "center",
-                      paddingTop: 30,
-                      color: darkMode ? "#9aa7c7" : "#6b7280",
-                    }}
-                  >
-                    <MessageSquare
-                      style={{ width: 48, height: 48, margin: "0 auto 12px" }}
-                    />
-                    <div>Please login to view mentions</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>
-                      Click the login button above
-                    </div>
-                  </div>
-                ) : !selectedMentionPlatform ? (
-                  // ✅ Platform selection
-                  <div style={{ padding: "20px", textAlign: "center" }}>
-                    <h3 style={{ 
-                      marginBottom: "20px", 
-                      color: darkMode ? "#e6eefc" : "#0b1c3a",
-                      fontSize: "18px",
-                      fontWeight: "600"
-                    }}>
-                      Select Platform
-                    </h3>
-                    <div style={{ 
-                      display: "flex", 
-                      gap: "20px", 
-                      justifyContent: "center",
-                      flexWrap: "wrap"
-                    }}>
-                      {/* Facebook Button */}
-                      <button
-                        onClick={() => setSelectedMentionPlatform('facebook')}
-                        style={{
-                          width: "200px",
-                          padding: "20px",
-                          borderRadius: "12px",
-                          border: "none",
-                          background: darkMode ? "#1e3a5f" : "#ffffff",
-                          cursor: "pointer",
-                          transition: "all 0.3s ease",
-                          boxShadow: darkMode 
-                            ? "0 4px 6px rgba(0, 0, 0, 0.3)" 
-                            : "0 4px 6px rgba(0, 0, 0, 0.1)",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "translateY(-5px)";
-                          e.currentTarget.style.boxShadow = darkMode
-                            ? "0 8px 12px rgba(0, 0, 0, 0.4)"
-                            : "0 8px 12px rgba(0, 0, 0, 0.15)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "translateY(0)";
-                          e.currentTarget.style.boxShadow = darkMode
-                            ? "0 4px 6px rgba(0, 0, 0, 0.3)"
-                            : "0 4px 6px rgba(0, 0, 0, 0.1)";
-                        }}
-                      >
-                        <img 
-                          src={facebookIcon} 
-                          alt="Facebook" 
-                          style={{ width: "60px", height: "60px", marginBottom: "10px" }}
-                        />
-                        <div style={{ 
-                          color: darkMode ? "#e6eefc" : "#0b1c3a",
-                          fontSize: "16px",
-                          fontWeight: "600"
-                        }}>
-                          Facebook
-                        </div>
-                      </button>
-
-                      {/* Instagram Button */}
-                      <button
-                        onClick={() => setSelectedMentionPlatform('instagram')}
-                        style={{
-                          width: "200px",
-                          padding: "20px",
-                          borderRadius: "12px",
-                          border: "none",
-                          background: darkMode ? "#1e3a5f" : "#ffffff",
-                          cursor: "pointer",
-                          transition: "all 0.3s ease",
-                          boxShadow: darkMode 
-                            ? "0 4px 6px rgba(0, 0, 0, 0.3)" 
-                            : "0 4px 6px rgba(0, 0, 0, 0.1)",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "translateY(-5px)";
-                          e.currentTarget.style.boxShadow = darkMode
-                            ? "0 8px 12px rgba(0, 0, 0, 0.4)"
-                            : "0 8px 12px rgba(0, 0, 0, 0.15)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "translateY(0)";
-                          e.currentTarget.style.boxShadow = darkMode
-                            ? "0 4px 6px rgba(0, 0, 0, 0.3)"
-                            : "0 4px 6px rgba(0, 0, 0, 0.1)";
-                        }}
-                      >
-                        <img 
-                          src={instagramIcon} 
-                          alt="Instagram" 
-                          style={{ width: "60px", height: "60px", marginBottom: "10px" }}
-                        />
-                        <div style={{ 
-                          color: darkMode ? "#e6eefc" : "#0b1c3a",
-                          fontSize: "16px",
-                          fontWeight: "600"
-                        }}>
-                          Instagram
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                ) : loading ? (
-                  // ⏳ While fetching
-                  <div>
-                    {/* Back button */}
-                    <button
-                      onClick={() => {
-                        setSelectedMentionPlatform(null);
-                        setMentions([]);
-                        setSelectedMessage(null);
-                      }}
-                      style={{
-                        padding: "8px 16px",
-                        marginBottom: "15px",
-                        borderRadius: "8px",
-                        border: "none",
-                        background: darkMode ? "#1e3a5f" : "#e6eefc",
-                        color: darkMode ? "#e6eefc" : "#0b1c3a",
-                        cursor: "pointer",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      ← Back to Platforms
-                    </button>
-                    <div
-                      style={{
-                        textAlign: "center",
-                        paddingTop: 30,
-                        color: darkMode ? "#9aa7c7" : "#6b7280",
-                      }}
-                    >
-                      <MessageSquare
-                        style={{ width: 48, height: 48, margin: "0 auto 12px" }}
-                      />
-                      <div>Loading {selectedMentionPlatform} mentions...</div>
-                    </div>
-                  </div>
-                ) : mentions.length === 0 ? (
-                  // 🟢 Logged in but no mentions
-                  <div>
-                    {/* Back button */}
-                    <button
-                      onClick={() => {
-                        setSelectedMentionPlatform(null);
-                        setMentions([]);
-                        setSelectedMessage(null);
-                      }}
-                      style={{
-                        padding: "8px 16px",
-                        marginBottom: "15px",
-                        borderRadius: "8px",
-                        border: "none",
-                        background: darkMode ? "#1e3a5f" : "#e6eefc",
-                        color: darkMode ? "#e6eefc" : "#0b1c3a",
-                        cursor: "pointer",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      ← Back to Platforms
-                    </button>
-                    <div
-                      style={{
-                        textAlign: "center",
-                        paddingTop: 30,
-                        color: darkMode ? "#9aa7c7" : "#6b7280",
-                      }}
-                    >
-                      <MessageSquare
-                        style={{ width: 48, height: 48, margin: "0 auto 12px" }}
-                      />
-                      <div>No {selectedMentionPlatform} mentions yet</div>
-                      <div style={{ fontSize: 13, marginTop: 6 }}>
-                        If you expected data, check Graph API permissions in backend.
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  // ✅ Logged in and mentions available
-                  <div>
-                    {/* Back button */}
-                    <button
-                      onClick={() => {
-                        setSelectedMentionPlatform(null);
-                        setMentions([]);
-                        setSelectedMessage(null);
-                      }}
-                      style={{
-                        padding: "8px 16px",
-                        marginBottom: "15px",
-                        borderRadius: "8px",
-                        border: "none",
-                        background: darkMode ? "#1e3a5f" : "#e6eefc",
-                        color: darkMode ? "#e6eefc" : "#0b1c3a",
-                        cursor: "pointer",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      ← Back to Platforms
-                    </button>
-                    {mentions.map((m) => (
-                    <div
-                      key={m.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setSelectedMessage(m)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          setSelectedMessage(m);
-                        }
-                      }}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
-                        padding: 12,
-                        borderRadius: 10,
-                        cursor: "pointer",
-                        marginBottom: 10,
-                        background:
-                          selectedMessage?.id === m.id
-                            ? "#006CFC"
-                            : darkMode
-                              ? "#0b1a2b"
-                              : "#eef7ff",
-                        color:
-                          selectedMessage?.id === m.id
-                            ? "#fff"
-                            : darkMode
-                              ? "#e6eefc"
-                              : "#0b1c3a",
-                        transition: "background 0.2s ease",
-                      }}
-                    >
-                      {/* ✅ Avatar */}
-                      {m.avatar ? (
-                        <img
-                          src={m.avatar}
-                          alt={m.username}
-                          style={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: "50%",
-                            objectFit: "cover",
-                          }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: "50%",
-                            background: "#c7d9ff",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontWeight: 700,
-                          }}
-                        >
-                          {m.username ? m.username.charAt(0).toUpperCase() : "U"}
-                        </div>
-                      )}
-
-                      {/* ✅ Text section */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <strong
-                            style={{
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            {m.username}
-                          </strong>
-                          <small
-                            style={{
-                              color: darkMode ? "#94a3b8" : "#6b7280",
-                              fontSize: 12,
-                              marginLeft: 8,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {m.time ? new Date(m.time).toLocaleString() : "Unknown"}
-                          </small>
-                        </div>
-                        <div
-                          style={{
-                            marginTop: 6,
-                            fontSize: 14,
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                          }}
-                        >
-                          {m.message || m.content || m.text || "(no text)"}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  </div>
-                )}
-              </>
-            )}
-
-            {activeTab === "dms" && (
-              <>
-                {!fbUser ? (
-                  <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
-                    <Mail style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                    <div>Please login to view messages</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>Click the login button above</div>
-                  </div>
-                ) : !selectedPlatform ? (
-                  /* Platform Selection for DMs */
-                  <div style={{
-                    background: darkMode ? '#1f2937' : '#f9fafb',
-                    padding: 20,
-                    borderRadius: 12,
-                    marginBottom: 20,
-                    textAlign: 'center'
-                  }}>
-                    <h4 style={{ marginBottom: 16 }}>Select Platform for Direct Messages</h4>
-                    <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <button
-                        onClick={() => setSelectedPlatform('facebook')}
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: 12,
-                          padding: '24px 32px',
-                          borderRadius: 12,
-                          border: '2px solid #1877F2',
-                          background: darkMode ? '#1e3a8a' : '#eff6ff',
-                          color: darkMode ? '#fff' : '#1e40af',
-                          cursor: 'pointer',
-                          minWidth: 150,
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        <img src={facebookIcon} alt="Facebook" style={{ width: 48, height: 48 }} />
-                        <div style={{ fontWeight: 600, fontSize: 16 }}>Facebook</div>
-                      </button>
-
-                      <button
-                        onClick={() => setSelectedPlatform('instagram')}
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: 12,
-                          padding: '24px 32px',
-                          borderRadius: 12,
-                          border: '2px solid #E4405F',
-                          background: darkMode ? '#831843' : '#fce7f3',
-                          color: darkMode ? '#fff' : '#9f1239',
-                          cursor: 'pointer',
-                          minWidth: 150,
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        <img src={instagramIcon} alt="Instagram" style={{ width: 48, height: 48 }} />
-                        <div style={{ fontWeight: 600, fontSize: 16 }}>Instagram</div>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {/* Header with Back button and platform title */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <button
-                          onClick={() => {
-                            setSelectedPlatform(null);
-                            setDms([]);
-                            setSelectedDm(null);
-                            setSelectedPage(null);
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: 8,
-                            border: '1px solid #d1d5db',
-                            background: darkMode ? '#374151' : '#fff',
-                            color: darkMode ? '#f3f4f6' : '#111827',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          ← Back
-                        </button>
-                        <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <img 
-                            src={selectedPlatform === 'instagram' ? instagramIcon : facebookIcon} 
-                            alt={selectedPlatform} 
-                            style={{ width: 24, height: 24 }} 
-                          />
-                          {selectedPlatform === 'instagram' ? 'Instagram' : 'Facebook'} Messages
-                        </h3>
-                      </div>
-                    </div>
-
-                    {/* Page Selector for Facebook DMs only */}
-                    {selectedPlatform === 'facebook' && (
-                      <div style={{ marginBottom: 16 }}>
-                        <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
-                          Select Page: * {pages.length > 0 && `(${pages.length} page${pages.length > 1 ? 's' : ''} available)`}
-                        </label>
-                        {pages.length === 0 ? (
-                          <div style={{
-                            padding: 16,
-                            borderRadius: 8,
-                            background: darkMode ? '#374151' : '#fef2f2',
-                            color: darkMode ? '#f87171' : '#dc2626',
-                            textAlign: 'center'
-                          }}>
-                            ⚠️ No Facebook pages found. Please make sure you manage at least one Facebook page.
-                          </div>
-                        ) : (
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <select
-                              value={selectedPage?.id || ""}
-                              onChange={(e) => {
-                                const page = pages.find(p => p.id === e.target.value);
-                                console.log("📄 Page selected from dropdown:", page);
-                                setSelectedPage(page);
-                              }}
-                              style={{
-                                flex: 1,
-                                padding: "12px",
-                                borderRadius: "8px",
-                                border: "1px solid #d1d5db",
-                                background: darkMode ? "#374151" : "#fff",
-                                color: darkMode ? "#f3f4f6" : "#111827",
-                              }}
-                            >
-                              <option value="">-- Select Page --</option>
-                              {pages.map(page => (
-                                <option key={page.id} value={page.id}>{page.name}</option>
-                              ))}
-                            </select>
-                          {selectedPage?.id && (
-                            <button
-                              onClick={() => {
-                                console.log("🔄 Manual fetch DMs clicked");
-                                fetchDms();
-                              }}
-                              style={{
-                                padding: "12px 20px",
-                                borderRadius: "8px",
-                                border: "none",
-                                background: "#006CFC",
-                                color: "#fff",
-                                cursor: "pointer",
-                                fontWeight: 600,
-                              }}
-                            >
-                              Load DMs
-                            </button>
-                          )}
-                        </div>
-                        )}
-                      </div>
-                    )}
-
-                {/* 🔽 Messages List */}
-                {!selectedPage && selectedPlatform === 'facebook' ? (
-                  <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
-                    <Mail style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                    <div>Please select a page</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>Choose a page from the dropdown above</div>
-                  </div>
-                ) : selectedPlatform === 'instagram' ? (
-                  <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
-                    <Mail style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                    <div>Instagram DMs coming soon</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>Instagram direct messages feature will be available soon</div>
-                  </div>
-                ) : dms.length === 0 ? (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      paddingTop: 30,
-                      color: darkMode ? "#9aa7c7" : "#6b7280",
-                    }}
-                  >
-                    <Mail style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                    <div>No messages yet</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>
-                      Select a page and click Refresh
-                    </div>
-                  </div>
-                ) : (
-                  dms.map((dm) => (
-                    <div
-                      key={dm.id}
-                      onClick={() => handleDmClick(dm)}
-                      style={{
-                        display: "flex",
-                        gap: 10,
-                        padding: 12,
-                        borderRadius: 10,
-                        cursor: "pointer",
-                        marginBottom: 10,
-                        background:
-                          selectedDm?.id === dm.id
-                            ? "#006CFC"
-                            : darkMode
-                              ? "#0b1a2b"
-                              : "#eef7ff",
-                        color:
-                          selectedDm?.id === dm.id
-                            ? "#fff"
-                            : darkMode
-                              ? "#e6eefc"
-                              : "#0b1c3a",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: 8,
-                          backgroundColor: darkMode ? "#1e3a5f" : "#e0e7ff",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          overflow: "hidden",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {dm.avatar ? (
-                          <img
-                            src={dm.avatar}
-                            alt={dm.username}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                            onError={(e) => {
-                              e.target.style.display = "none";
-                              e.target.parentElement.innerHTML = `<div style="color: ${darkMode ? '#fff' : '#4f46e5'}; font-weight: 600; font-size: 18px;">${dm.username?.charAt(0)?.toUpperCase() || '?'}</div>`;
-                            }}
-                          />
-                        ) : (
-                          <div style={{ color: darkMode ? "#fff" : "#4f46e5", fontWeight: 600, fontSize: 18 }}>
-                            {dm.username?.charAt(0)?.toUpperCase() || "?"}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <strong>{dm.username}</strong>
-                          {dm.unread > 0 && (
-                            <span
-                              style={{
-                                background: "#ef4444",
-                                color: "white",
-                                borderRadius: "50%",
-                                width: 20,
-                                height: 20,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 12,
-                              }}
-                            >
-                              {dm.unread}
-                            </span>
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            marginTop: 6,
-                            fontSize: 14,
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                          }}
-                        >
-                          {dm.lastMessage || "(no message)"}
-                        </div>
-                        <div
-                          style={{
-                            marginTop: 4,
-                            fontSize: 12,
-                            color: darkMode ? "#94a3b8" : "#6b7280",
-                          }}
-                        >
-                          {new Date(dm.time).toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-                  </>
-                )}
-              </>
-            )}
-
-
-            {activeTab === "posts" && (
-              <div style={{ padding: 16 }}>
-                {!fbUser ? (
-                  <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
-                    <Image style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                    <div>Please login to view and create posts</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>Click the login button above</div>
-                  </div>
-                ) : (
-                  <>
-                    {/* Platform Selection - Shows FIRST when posts tab is clicked */}
-                    {!selectedPlatform && (
-                      <div style={{
-                        background: darkMode ? '#1f2937' : '#f9fafb',
-                        padding: 20,
-                        borderRadius: 12,
-                        marginBottom: 20,
-                        textAlign: 'center'
-                      }}>
-                        <h4 style={{ marginBottom: 16 }}>Select Platform</h4>
-                        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-                          <button
-                            onClick={() => setSelectedPlatform('facebook')}
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              gap: 12,
-                              padding: '24px 32px',
-                              borderRadius: 12,
-                              border: '2px solid #1877F2',
-                              background: darkMode ? '#1e3a8a' : '#eff6ff',
-                              color: darkMode ? '#fff' : '#1e40af',
-                              cursor: 'pointer',
-                              minWidth: 150,
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            <img src={facebookIcon} alt="Facebook" style={{ width: 48, height: 48 }} />
-                            <div style={{ fontWeight: 600, fontSize: 16 }}>Facebook</div>
-                          </button>
-
-                          <button
-                            onClick={() => setSelectedPlatform('instagram')}
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              gap: 12,
-                              padding: '24px 32px',
-                              borderRadius: 12,
-                              border: '2px solid #E4405F',
-                              background: darkMode ? '#831843' : '#fce7f3',
-                              color: darkMode ? '#fff' : '#9f1239',
-                              cursor: 'pointer',
-                              minWidth: 150,
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            <img src={instagramIcon} alt="Instagram" style={{ width: 48, height: 48 }} />
-                            <div style={{ fontWeight: 600, fontSize: 16 }}>Instagram</div>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Facebook Platform View - Shows posts list + create button */}
-                    {selectedPlatform === 'facebook' && !showPostForm && (
-                      <>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <button
-                              onClick={() => {
-                                setSelectedPlatform(null);
-                                setPosts([]);
-                                setIgPosts([]);
-                                setSelectedPost(null);
-                                setShowPostForm(false);
-                              }}
-                              style={{
-                                padding: '6px 12px',
-                                borderRadius: 8,
-                                border: '1px solid #d1d5db',
-                                background: darkMode ? '#374151' : '#fff',
-                                color: darkMode ? '#f3f4f6' : '#111827',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              ← Back
-                            </button>
-                            <h3 style={{ margin: 0 }}>📘 Facebook Posts</h3>
-                          </div>
-                          <button
-                            onClick={() => setShowPostForm(true)}
-                            style={{
-                              padding: '6px 12px',
-                              borderRadius: 8,
-                              border: 'none',
-                              background: '#1877F2',
-                              color: '#fff',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            + Create Post
-                          </button>
-                        </div>
-
-                        {/* Facebook Posts List */}
-                        {posts.length === 0 ? (
-                          <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
-                            <Image style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                            <div>No Facebook posts yet</div>
-                            <div style={{ fontSize: 13, marginTop: 6 }}>Click "Create Post" to get started</div>
-                          </div>
-                        ) : (
-                          <div>
-                            {posts.map((post) => (
-                              <div
-                                key={post.id}
-                                style={{
-                                  padding: 16,
-                                  borderRadius: 10,
-                                  marginBottom: 12,
-                                  background: darkMode ? '#1f2937' : '#fff',
-                                  border: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb'),
-                                }}
-                              >
-                                {/* Post Header */}
-                                <div 
-                                  onClick={() => setSelectedPost(post)}
-                                  style={{ 
-                                    display: 'flex', 
-                                    justifyContent: 'space-between', 
-                                    alignItems: 'center', 
-                                    marginBottom: 8,
-                                    cursor: "pointer"
-                                  }}
-                                >
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    {post.authorImage && (
-                                      <img
-                                        src={post.authorImage}
-                                        alt={post.authorName}
-                                        style={{
-                                          width: 32,
-                                          height: 32,
-                                          borderRadius: '50%',
-                                          objectFit: 'cover'
-                                        }}
-                                      />
-                                    )}
-                                    <div>
-                                      <strong style={{ fontSize: 16 }}>{post.caption || post.content.slice(0, 30)}</strong>
-                                      <div style={{ fontSize: 12, color: darkMode ? '#94a3b8' : '#6b7280', marginTop: 4 }}>
-                                        Posted by: {post.authorName || post.page}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <small style={{ color: darkMode ? '#94a3b8' : '#6b7280', fontSize: 12 }}>
-                                    {new Date(post.timestamp).toLocaleDateString()}
-                                  </small>
-                                </div>
-
-                                {/* Post Content */}
-                                <div onClick={() => setSelectedPost(post)} style={{ cursor: "pointer" }}>
-                                  <p style={{ marginBottom: 12, color: darkMode ? '#d1d5db' : '#374151' }}>
-                                    {post.content.length > 150 ? post.content.slice(0, 150) + "..." : post.content}
-                                  </p>
-                                  {post.mediaUrl && (
-                                    <img
-                                      src={post.mediaUrl}
-                                      alt="Post"
+            ))}
+          </div>
+        )}
+        
+                              </>
+                            )}
+        
+                            {/* Old Posts List - Remove this section as we moved it to Facebook platform view */}
+                            {!showPostForm && !selectedPlatform && posts.length > 0 && (
+                              <div style={{ display: 'none' }}>
+                                  {posts.map((post) => (
+                                    <div
+                                      key={post.id}
+                                      onClick={() => setSelectedPost(post)}
                                       style={{
-                                        width: '100%',
-                                        maxHeight: 300,
-                                        objectFit: 'cover',
-                                        borderRadius: 8,
-                                        marginTop: 8
+                                        padding: 16,
+                                        borderRadius: 10,
+                                        marginBottom: 12,
+                                        background: darkMode ? '#1f2937' : '#fff',
+                                        border: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb'),
+                                        cursor: "pointer"
                                       }}
-                                      onError={(e) => {
-                                        console.log("Image load error for:", post.mediaUrl);
-                                        e.target.style.display = 'none';
-                                      }}
-                                    />
-                                  )}
-                                </div>
-
-                                {/* Likes and Comments Stats */}
-                                <div style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  marginTop: 12,
-                                  paddingTop: 12,
-                                  borderTop: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb'),
-                                  fontSize: 13,
-                                  color: darkMode ? '#94a3b8' : '#6b7280'
-                                }}>
-                                  <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                                    <ThumbsUp size={14} />
-                                    <span>{post.likes?.summary?.total_count || 0} Likes</span>
-                                    {post.reactions?.summary?.total_count > 0 && post.reactions?.summary?.total_count !== post.likes?.summary?.total_count && (
-                                      <span style={{ marginLeft: 4 }}>
-                                        · {post.reactions?.summary?.total_count} Reactions
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div>
-                                    {post.comments?.summary?.total_count > 0 && (
-                                      <span>{post.comments.summary.total_count} Comment{post.comments.summary.total_count !== 1 ? 's' : ''}</span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div style={{
-                                  display: 'flex',
-                                  gap: 8,
-                                  marginTop: 8,
-                                  paddingTop: 8,
-                                  borderTop: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb')
-                                }}>
-                                  <button
-                                    onClick={() => handleToggleComments(post.id)}
-                                    style={{
-                                      flex: 1,
-                                      padding: '8px 12px',
-                                      borderRadius: 6,
-                                      background: showCommentsForPost === post.id ? (darkMode ? '#374151' : '#f3f4f6') : 'transparent',
-                                      border: 'none',
-                                      color: darkMode ? '#d1d5db' : '#374151',
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      gap: 6,
-                                      fontSize: 14,
-                                      fontWeight: 500
-                                    }}
-                                  >
-                                    <MessageCircle size={16} />
-                                    {showCommentsForPost === post.id ? 'Hide Comments' : 'View Comments'}
-                                  </button>
-                                </div>
-
-                                {/* Comments Section */}
-                                {showCommentsForPost === post.id && (
-                                  <div style={{
-                                    marginTop: 12,
-                                    paddingTop: 12,
-                                    borderTop: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb')
-                                  }}>
-                                    {loadingComments ? (
-                                      <div style={{ textAlign: 'center', padding: 20, color: darkMode ? '#94a3b8' : '#6b7280' }}>
-                                        Loading comments...
-                                      </div>
-                                    ) : commentsData[post.id]?.length > 0 ? (
-                                      <div>
-                                        {commentsData[post.id].map((comment) => (
-                                          <div
-                                            key={comment.id}
-                                            style={{
-                                              padding: 12,
-                                              background: darkMode ? '#111827' : '#f9fafb',
-                                              borderRadius: 8,
-                                              marginBottom: 8
-                                            }}
-                                          >
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                                              <div>
-                                                <strong style={{ fontSize: 14 }}>{comment.from?.name || 'Unknown User'}</strong>
-                                                <div style={{ fontSize: 12, color: darkMode ? '#94a3b8' : '#6b7280', marginTop: 2 }}>
-                                                  {new Date(comment.created_time).toLocaleString()}
-                                                </div>
-                                              </div>
-                                              {comment.like_count > 0 && (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: darkMode ? '#94a3b8' : '#6b7280' }}>
-                                                  <ThumbsUp size={12} />
-                                                  {comment.like_count}
-                                                </div>
-                                              )}
-                                            </div>
-                                            <p style={{ fontSize: 14, color: darkMode ? '#d1d5db' : '#374151', marginBottom: 8 }}>
-                                              {comment.message}
-                                            </p>
-
-                                            {/* Reply Button */}
-                                            <button
-                                              onClick={() => {
-                                                if (replyingToComment === comment.id) {
-                                                  setReplyingToComment(null);
-                                                  setCommentReplyText("");
-                                                } else {
-                                                  setReplyingToComment(comment.id);
-                                                }
-                                              }}
+                                    >
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                          {/* ✅ Author avatar */}
+                                          {post.authorImage && (
+                                            <img
+                                              src={post.authorImage}
+                                              alt={post.authorName}
                                               style={{
-                                                padding: '4px 12px',
-                                                borderRadius: 4,
-                                                background: 'transparent',
-                                                border: 'none',
-                                                color: '#3b82f6',
-                                                cursor: 'pointer',
-                                                fontSize: 13,
-                                                fontWeight: 500
+                                                width: 32,
+                                                height: 32,
+                                                borderRadius: '50%',
+                                                objectFit: 'cover'
                                               }}
-                                            >
-                                              {replyingToComment === comment.id ? 'Cancel' : 'Reply'}
-                                            </button>
-
-                                            {/* Reply Input */}
-                                            {replyingToComment === comment.id && (
-                                              <div style={{ marginTop: 8 }}>
-                                                <div style={{ display: 'flex', gap: 8 }}>
-                                                  <input
-                                                    type="text"
-                                                    value={commentReplyText}
-                                                    onChange={(e) => setCommentReplyText(e.target.value)}
-                                                    placeholder="Write a reply..."
-                                                    style={{
-                                                      flex: 1,
-                                                      padding: '8px 12px',
-                                                      borderRadius: 6,
-                                                      border: '1px solid ' + (darkMode ? '#374151' : '#d1d5db'),
-                                                      background: darkMode ? '#1f2937' : '#fff',
-                                                      color: darkMode ? '#f3f4f6' : '#111827',
-                                                      fontSize: 14
-                                                    }}
-                                                    onKeyPress={(e) => {
-                                                      if (e.key === 'Enter') {
-                                                        handleReplyToComment(comment.id, post.id);
-                                                      }
-                                                    }}
-                                                  />
-                                                  <button
-                                                    onClick={() => handleReplyToComment(comment.id, post.id)}
-                                                    disabled={!commentReplyText.trim() || loadingComments}
-                                                    style={{
-                                                      padding: '8px 16px',
-                                                      borderRadius: 6,
-                                                      background: commentReplyText.trim() ? '#3b82f6' : (darkMode ? '#374151' : '#e5e7eb'),
-                                                      border: 'none',
-                                                      color: commentReplyText.trim() ? '#fff' : (darkMode ? '#6b7280' : '#9ca3af'),
-                                                      cursor: commentReplyText.trim() ? 'pointer' : 'not-allowed',
-                                                      fontSize: 14,
-                                                      fontWeight: 500,
-                                                      display: 'flex',
-                                                      alignItems: 'center',
-                                                      gap: 6
-                                                    }}
-                                                  >
-                                                    <Send size={14} />
-                                                    Send
-                                                  </button>
-                                                </div>
-                                              </div>
-                                            )}
-
-                                            {/* Nested Replies Display */}
-                                            {comment.comments && comment.comments.data && comment.comments.data.length > 0 && (
-                                              <div style={{ 
-                                                marginTop: 12, 
-                                                marginLeft: 40, 
-                                                paddingLeft: 16, 
-                                                borderLeft: '2px solid ' + (darkMode ? '#374151' : '#e5e7eb')
-                                              }}>
-                                                {comment.comments.data.map((reply) => (
-                                                  <div key={reply.id} style={{ marginBottom: 12 }}>
-                                                    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                                                      {/* Reply Author Avatar */}
-                                                      <div style={{
-                                                        width: 28,
-                                                        height: 28,
-                                                        borderRadius: '50%',
-                                                        background: '#93c5fd',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        color: '#1e40af',
-                                                        fontWeight: 600,
-                                                        fontSize: 12,
-                                                        flexShrink: 0
-                                                      }}>
-                                                        {reply.from?.name?.charAt(0).toUpperCase() || 'U'}
-                                                      </div>
-                                                      
-                                                      <div style={{ flex: 1 }}>
-                                                        <div style={{ 
-                                                          background: darkMode ? '#1f2937' : '#f3f4f6',
-                                                          padding: '8px 12px',
-                                                          borderRadius: 8
-                                                        }}>
-                                                          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>
-                                                            {reply.from?.name || 'Unknown User'}
-                                                          </div>
-                                                          <p style={{ fontSize: 13, margin: 0 }}>
-                                                            {reply.message}
-                                                          </p>
-                                                        </div>
-                                                        <div style={{ 
-                                                          marginTop: 4, 
-                                                          fontSize: 11, 
-                                                          color: darkMode ? '#9ca3af' : '#6b7280',
-                                                          display: 'flex',
-                                                          gap: 8,
-                                                          alignItems: 'center'
-                                                        }}>
-                                                          <span>{new Date(reply.created_time).toLocaleString()}</span>
-                                                          {reply.like_count > 0 && (
-                                                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                              <ThumbsUp size={11} />
-                                                              {reply.like_count}
-                                                            </span>
-                                                          )}
-                                                        </div>
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            )}
+                                            />
+                                          )}
+                                          <div>
+                                            <strong style={{ fontSize: 16 }}>{post.caption || post.content.slice(0, 30)}</strong>
+                                            <div style={{ fontSize: 12, color: darkMode ? '#94a3b8' : '#6b7280', marginTop: 4 }}>
+                                              Posted by: {post.authorName || post.page}
+                                            </div>
                                           </div>
-                                        ))}
+                                        </div>
+                                        <small style={{ color: darkMode ? '#94a3b8' : '#6b7280', fontSize: 12 }}>
+                                          {new Date(post.timestamp).toLocaleDateString()}
+                                        </small>
                                       </div>
-                                    ) : (
-                                      <div style={{ textAlign: 'center', padding: 20, color: darkMode ? '#94a3b8' : '#6b7280' }}>
-                                        No comments yet. Be the first to comment!
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
+                                      <p style={{ marginBottom: 12, color: darkMode ? '#d1d5db' : '#374151' }}>
+                                        {post.content.length > 150 ? post.content.slice(0, 150) + "..." : post.content}
+                                      </p>
+                                      {post.mediaUrl && (
+                                        <img
+                                          src={post.mediaUrl}
+                                          alt="Post"
+                                          style={{
+                                            width: '100%',
+                                            maxHeight: 300,
+                                            objectFit: 'cover',
+                                            borderRadius: 8,
+                                            marginTop: 8
+                                          }}
+                                          onError={(e) => {
+                                            console.log("Image load error for:", post.mediaUrl);
+                                            e.target.style.display = 'none';
+                                          }}
+                                        />
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                            )}
+                          </>
                         )}
-                      </>
-                    )}
-
-                    {/* Facebook Post Creation Form */}
-                    {showPostForm && selectedPlatform === 'facebook' && (
-                      <div style={{
-                        background: darkMode ? '#1f2937' : '#f9fafb',
-                        padding: 20,
-                        borderRadius: 12,
-                        marginBottom: 20
-                      }}>
-                        <h4 style={{ marginBottom: 16 }}>Create New Post</h4>
-
-                        <div style={{ marginBottom: 16 }}>
-                          <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
-                            Write Post: *
-                          </label>
-                          <textarea
-                            value={postContent}
-                            onChange={(e) => setPostContent(e.target.value)}
-                            placeholder="Write your post content here..."
-                            rows={4}
-                            style={{
-                              width: '100%',
-                              padding: '12px',
-                              borderRadius: '8px',
-                              border: '1px solid #d1d5db',
-                              background: darkMode ? '#374151' : '#fff',
-                              color: darkMode ? '#f3f4f6' : '#111827',
-                              resize: 'vertical'
-                            }}
-                          />
-                        </div>
-
-                        <div style={{ marginBottom: 16 }}>
-                          <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
-                            Select Page: *
-                          </label>
-                          <select
-                            value={selectedPage?.id || ""}
-                            onChange={(e) => {
-                              const page = pages.find((p) => p.id === e.target.value);
-                              setSelectedPage(page || null); // store the whole object
-                              setDms([]);
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '12px',
-                              borderRadius: '8px',
-                              border: '1px solid #d1d5db',
-                              background: darkMode ? '#374151' : '#fff',
-                              color: darkMode ? '#f3f4f6' : '#111827'
-                            }}
-                          >
-                            <option value="">-- Select Page --</option>
-                            {pages.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-{/* <div style={{ marginBottom: 16 }}>
-  <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
-    Select Page: *
-  </label>
-<select
-  value={selectedPage?.id || ""}
-  onChange={(e) => {
-    const page = pages.find(p => p.id === e.target.value);
-    setSelectedPage(page);
-  }}
-   style={{
-    width: "100%",
-    padding: "12px",
-    borderRadius: "8px",
-    border: "1px solid #d1d5db",
-    background: darkMode ? "#374151" : "#fff",
-    color: darkMode ? "#f3f4f6" : "#111827",
-  }}
->
-  <option value="">-- Select Page --</option>
-  {pages.map(page => (
-    <option key={page.id} value={page.id}>{page.name}</option>
-  ))}
-</select>
-</div> */}
-
-
-                        <div style={{ marginBottom: 16 }}>
-                          <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
-                            Upload Media (optional):
-                          </label>
-                          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                            <label style={{
-                              padding: '10px 16px',
-                              border: selectedPhoto ? '2px solid #10b981' : '1px solid #d1d5db',
-                              borderRadius: '8px',
-                              background: darkMode ? '#4b5563' : '#e5e7eb',
-                              cursor: selectedVideo ? 'not-allowed' : 'pointer',
-                              display: 'inline-block'
-                            }}>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                disabled={!!selectedVideo}
-                                onChange={(e) => setSelectedPhoto(e.target.files[0])}
-                                style={{ display: 'none' }}
-                              />
-                              {selectedPhoto ? '✓ Photo Selected' : 'Upload Photo'}
-                            </label>
-
-                            <label style={{
-                              padding: '10px 16px',
-                              border: selectedVideo ? '2px solid #10b981' : '1px solid #d1d5db',
-                              borderRadius: '8px',
-                              background: darkMode ? '#4b5563' : '#e5e7eb',
-                              cursor: selectedPhoto ? 'not-allowed' : 'pointer',
-                              display: 'inline-block'
-                            }}>
-                              <input
-                                type="file"
-                                accept="video/*"
-                                disabled={!!selectedPhoto}
-                                onChange={(e) => setSelectedVideo(e.target.files[0])}
-                                style={{ display: 'none' }}
-                              />
-                              {selectedVideo ? '✓ Video Selected' : 'Upload Video'}
-                            </label>
-                          </div>
-                          {/* <small style={{ color: darkMode ? '#94a3b8' : '#6b7280', marginTop: 4, display: 'block' }}>
-                            * Required: Please upload either a photo or video
-                          </small> */}
-                        </div>
-
-                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                          <button
-                            onClick={handleMakePost}
-                            disabled={saving}
-                            style={{
-                              padding: '12px 20px',
-                              border: 'none',
-                              borderRadius: '8px',
-                              background: saving ? '#6b7280' : '#10b981',
-                              color: 'white',
-                              cursor: saving ? 'not-allowed' : 'pointer',
-                              opacity: saving ? 0.7 : 1
-                            }}
-                          >
-                            {saving ? "Posting..." : "Save Post"}
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setShowPostForm(false);
-                              setSelectedPlatform(null);
-                            }}
-                            disabled={saving}
-                            style={{
-                              padding: '12px 20px',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '8px',
-                              background: darkMode ? '#374151' : '#f9fafb',
-                              cursor: saving ? 'not-allowed' : 'pointer',
-                              opacity: saving ? 0.7 : 1
-                            }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
                       </div>
                     )}
-
-                    {/* Instagram Post Creation Form */}
-                    {showPostForm && selectedPlatform === 'instagram' && (
-                      <div style={{
-                        background: darkMode ? '#1f2937' : '#f9fafb',
-                        padding: 20,
-                        borderRadius: 12,
-                        marginBottom: 20
-                      }}>
-                        <h4 style={{ marginBottom: 16 }}>Create Instagram Post</h4>
-
-                        <div style={{ marginBottom: 16 }}>
-                          <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
-                            Image URL: *
-                          </label>
-                          <input
-                            type="text"
-                            value={igImageUrl}
-                            onChange={(e) => setIgImageUrl(e.target.value)}
-                            placeholder="https://example.com/image.jpg"
-                            style={{
-                              width: '100%',
-                              padding: '12px',
-                              borderRadius: '8px',
-                              border: '1px solid #d1d5db',
-                              background: darkMode ? '#374151' : '#fff',
-                              color: darkMode ? '#f3f4f6' : '#111827',
-                            }}
-                          />
-                          <small style={{ color: darkMode ? '#94a3b8' : '#6b7280', marginTop: 4, display: 'block' }}>
-                            Direct link to the image you want to post
-                          </small>
-                        </div>
-
-                        <div style={{ marginBottom: 16 }}>
-                          <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
-                            Caption (optional):
-                          </label>
-                          <textarea
-                            value={igCaption}
-                            onChange={(e) => setIgCaption(e.target.value)}
-                            placeholder="Write your Instagram caption here..."
-                            rows={4}
-                            style={{
-                              width: '100%',
-                              padding: '12px',
-                              borderRadius: '8px',
-                              border: '1px solid #d1d5db',
-                              background: darkMode ? '#374151' : '#fff',
-                              color: darkMode ? '#f3f4f6' : '#111827',
-                              resize: 'vertical'
-                            }}
-                          />
-                        </div>
-
-                        <div style={{ marginBottom: 16 }}>
-                          <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
-                            Tag Users (optional):
-                          </label>
-                          <input
-                            type="text"
-                            value={igUsernames}
-                            onChange={(e) => setIgUsernames(e.target.value)}
-                            placeholder="username1, username2, username3"
-                            style={{
-                              width: '100%',
-                              padding: '12px',
-                              borderRadius: '8px',
-                              border: '1px solid #d1d5db',
-                              background: darkMode ? '#374151' : '#fff',
-                              color: darkMode ? '#f3f4f6' : '#111827',
-                            }}
-                          />
-                          <small style={{ color: darkMode ? '#94a3b8' : '#6b7280', marginTop: 4, display: 'block' }}>
-                            Enter usernames separated by commas (without @)
-                          </small>
-                        </div>
-
-                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                          <button
-                            onClick={handleMakeInstagramPost}
-                            disabled={saving}
-                            style={{
-                              padding: '12px 20px',
-                              border: 'none',
-                              borderRadius: '8px',
-                              background: saving ? '#6b7280' : '#E4405F',
-                              color: 'white',
-                              cursor: saving ? 'not-allowed' : 'pointer',
-                              opacity: saving ? 0.7 : 1
-                            }}
-                          >
-                            {saving ? "Posting to Instagram..." : "Post to Instagram"}
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setShowPostForm(false);
-                              setSelectedPlatform(null);
-                              setIgImageUrl("");
-                              setIgCaption("");
-                              setIgUsernames("");
-                            }}
-                            disabled={saving}
-                            style={{
-                              padding: '12px 20px',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '8px',
-                              background: darkMode ? '#374151' : '#f9fafb',
-                              cursor: saving ? 'not-allowed' : 'pointer',
-                              opacity: saving ? 0.7 : 1
-                            }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Instagram Platform View - Shows posts list + create button */}
-                    {selectedPlatform === 'instagram' && !showPostForm && (
+                  </section>
+        
+                  {/* Chat / message viewer */}
+                  <section style={{ flex: 1, display: "flex", flexDirection: "column", padding: 20, overflow: "hidden" }}>
+                    {activeTab === "posts" && selectedPost ? (
                       <>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <button
-                              onClick={() => {
-                                setSelectedPlatform(null);
-                                setPosts([]);
-                                setIgPosts([]);
-                                setSelectedPost(null);
-                                setShowPostForm(false);
-                              }}
-                              style={{
-                                padding: '6px 12px',
-                                borderRadius: 8,
-                                border: '1px solid #d1d5db',
-                                background: darkMode ? '#374151' : '#fff',
-                                color: darkMode ? '#f3f4f6' : '#111827',
-                                cursor: 'pointer',
+                          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            {/* ✅ Show author avatar or default */}
+                            <div 
+                              style={{ 
+                                width: 48, 
+                                height: 48, 
+                                borderRadius: 10, 
+                                background: selectedPost.authorImage ? "transparent" : "#c7d9ff", 
+                                display: "flex", 
+                                alignItems: "center", 
+                                justifyContent: "center", 
+                                fontWeight: 700,
+                                overflow: "hidden"
                               }}
                             >
-                              ← Back
-                            </button>
-                            <h3 style={{ margin: 0 }}>📷 Instagram Posts</h3>
-                          </div>
-                          <button
-                            onClick={() => setShowPostForm(true)}
-                            style={{
-                              padding: '6px 12px',
-                              borderRadius: 8,
-                              border: 'none',
-                              background: '#E4405F',
-                              color: '#fff',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            + Create Post
-                          </button>
-                        </div>
-
-                        {/* Instagram Posts List */}
-                        {loading ? (
-                          <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
-                            <div>Loading Instagram posts...</div>
-                          </div>
-                        ) : igPosts.length === 0 ? (
-                          <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
-                            <Image style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                            <div>No Instagram posts yet</div>
-                            <div style={{ fontSize: 13, marginTop: 6 }}>Click "Create Post" to get started</div>
-                          </div>
-                        ) : (
-                          <div>
-                            {igPosts.map((post) => (
-                              <div
-                                key={post.id}
-                                onClick={() => setSelectedPost(post)}
-                                style={{
-                                  padding: 16,
-                                  borderRadius: 10,
-                                  marginBottom: 12,
-                                  background: darkMode ? '#1f2937' : '#fff',
-                                  border: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb'),
-                                  cursor: "pointer"
-                                }}
-                              >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                  <strong style={{ fontSize: 16 }}>{post.caption?.slice(0, 50) || ""}</strong>
-                                  <small style={{ color: darkMode ? '#94a3b8' : '#6b7280', fontSize: 12 }}>
-                                    {new Date(post.timestamp).toLocaleDateString()}
-                                  </small>
-                                </div>
-                                <p style={{ marginBottom: 12, color: darkMode ? '#d1d5db' : '#374151', fontSize: 14 }}>
-                                  {post.caption && post.caption.length > 150 ? post.caption.slice(0, 150) + "..." : post.caption}
-                                </p>
-                                {post.mediaUrl && post.mediaType === 'IMAGE' && (
-                                  <img
-                                    src={post.mediaUrl}
-                                    alt="Instagram Post"
-                                    style={{
-                                      width: '100%',
-                                      maxHeight: 300,
-                                      objectFit: 'cover',
-                                      borderRadius: 8,
-                                      marginTop: 8
-                                    }}
-                                    onError={(e) => {
-                                      console.log("Image load error for:", post.mediaUrl);
-                                      e.target.style.display = 'none';
-                                    }}
-                                  />
-                                )}
-                                {post.mediaType === 'VIDEO' && (
-                                  <div style={{ 
-                                    padding: 16, 
-                                    background: darkMode ? '#0f172a' : '#f1f5f9', 
-                                    borderRadius: 8,
-                                    textAlign: 'center',
-                                    marginTop: 8
-                                  }}>
-                                    🎥 Video Post
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    )}
-
-                    {/* Old Posts List - Remove this section as we moved it to Facebook platform view */}
-                    {!showPostForm && !selectedPlatform && posts.length > 0 && (
-                      <div style={{ display: 'none' }}>
-                          {posts.map((post) => (
-                            <div
-                              key={post.id}
-                              onClick={() => setSelectedPost(post)}
-                              style={{
-                                padding: 16,
-                                borderRadius: 10,
-                                marginBottom: 12,
-                                background: darkMode ? '#1f2937' : '#fff',
-                                border: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb'),
-                                cursor: "pointer"
-                              }}
-                            >
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  {/* ✅ Author avatar */}
-                                  {post.authorImage && (
-                                    <img
-                                      src={post.authorImage}
-                                      alt={post.authorName}
-                                      style={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: '50%',
-                                        objectFit: 'cover'
-                                      }}
-                                    />
-                                  )}
-                                  <div>
-                                    <strong style={{ fontSize: 16 }}>{post.caption || post.content.slice(0, 30)}</strong>
-                                    <div style={{ fontSize: 12, color: darkMode ? '#94a3b8' : '#6b7280', marginTop: 4 }}>
-                                      Posted by: {post.authorName || post.page}
-                                    </div>
-                                  </div>
-                                </div>
-                                <small style={{ color: darkMode ? '#94a3b8' : '#6b7280', fontSize: 12 }}>
-                                  {new Date(post.timestamp).toLocaleDateString()}
-                                </small>
-                              </div>
-                              <p style={{ marginBottom: 12, color: darkMode ? '#d1d5db' : '#374151' }}>
-                                {post.content.length > 150 ? post.content.slice(0, 150) + "..." : post.content}
-                              </p>
-                              {post.mediaUrl && (
+                              {selectedPost.authorImage ? (
                                 <img
-                                  src={post.mediaUrl}
-                                  alt="Post"
-                                  style={{
-                                    width: '100%',
-                                    maxHeight: 300,
-                                    objectFit: 'cover',
-                                    borderRadius: 8,
-                                    marginTop: 8
-                                  }}
-                                  onError={(e) => {
-                                    console.log("Image load error for:", post.mediaUrl);
-                                    e.target.style.display = 'none';
-                                  }}
+                                  src={selectedPost.authorImage}
+                                  alt={selectedPost.authorName}
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
                                 />
+                              ) : (
+                                selectedPost.authorName?.charAt(0)?.toUpperCase() || "P"
                               )}
                             </div>
-                          ))}
-                        </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-          </section>
-
-          {/* Chat / message viewer */}
-          <section style={{ flex: 1, display: "flex", flexDirection: "column", padding: 20, overflow: "hidden" }}>
-            {activeTab === "posts" && selectedPost ? (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    {/* ✅ Show author avatar or default */}
-                    <div 
-                      style={{ 
-                        width: 48, 
-                        height: 48, 
-                        borderRadius: 10, 
-                        background: selectedPost.authorImage ? "transparent" : "#c7d9ff", 
-                        display: "flex", 
-                        alignItems: "center", 
-                        justifyContent: "center", 
-                        fontWeight: 700,
-                        overflow: "hidden"
-                      }}
-                    >
-                      {selectedPost.authorImage ? (
-                        <img
-                          src={selectedPost.authorImage}
-                          alt={selectedPost.authorName}
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        />
-                      ) : (
-                        selectedPost.authorName?.charAt(0)?.toUpperCase() || "P"
-                      )}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 700 }}>{selectedPost.authorName || "Your Post"}</div>
-                      <div style={{ fontSize: 13, color: darkMode ? "#9aa7c7" : "#6b7280", display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {selectedPlatform === 'instagram' ? (
-                          <>
-                            <img src={instagramIcon} alt="Instagram" style={{ width: 20, height: 20 }} />
-                            <span>Instagram</span>
-                          </>
-                        ) : (
-                          <>
-                            <img src={facebookIcon} alt="Facebook" style={{ width: 20, height: 20 }} />
-                            <span>Facebook</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Show edit/delete buttons only for Facebook posts */}
-                {selectedPlatform === 'facebook' && (
-                  <>
-                    <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-                      <button
-                        onClick={() => handleStartEditPost(selectedPost)}
-                        disabled={postActionLoading}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          padding: '10px 16px',
-                          borderRadius: 8,
-                          border: '1px solid ' + (darkMode ? '#334155' : '#cbd5f5'),
-                          background: darkMode ? (editingPost?.id === selectedPost.id ? '#1e293b' : '#0b1629') : (editingPost?.id === selectedPost.id ? '#e8f1ff' : '#fff'),
-                          color: darkMode ? '#dbeafe' : '#1f2937',
-                          cursor: postActionLoading ? 'not-allowed' : 'pointer'
-                        }}
-                      >
-                        <Edit style={{ width: 16, height: 16 }} />
-                        {editingPost?.id === selectedPost.id ? 'Editing...' : 'Edit Post'}
-                      </button>
-
-                      <button
-                        onClick={() => handleDeletePost(selectedPost.id)}
-                        disabled={postActionLoading}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          padding: '10px 16px',
-                          borderRadius: 8,
-                          border: 'none',
-                          background: '#dc2626',
-                          color: '#fff',
-                          cursor: postActionLoading ? 'not-allowed' : 'pointer',
-                          opacity: postActionLoading ? 0.7 : 1
-                        }}
-                      >
-                        <Trash2 style={{ width: 16, height: 16 }} />
-                        Delete Post
-                      </button>
-                    </div>
-
-                    {editingPost && editingPost.id === selectedPost.id && (
-                      <div
-                        style={{
-                          padding: 16,
-                          borderRadius: 10,
-                          border: '1px solid ' + (darkMode ? '#1e293b' : '#dbeafe'),
-                          background: darkMode ? '#0f172a' : '#f8fafc',
-                          marginBottom: 16
-                        }}
-                      >
-                        <h4 style={{ marginTop: 0, marginBottom: 12 }}>Edit Post Content</h4>
-                        <textarea
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          rows={5}
-                          style={{
-                            width: '100%',
-                            padding: '12px',
-                            borderRadius: 8,
-                            border: '1px solid ' + (darkMode ? '#334155' : '#cbd5f5'),
-                            background: darkMode ? '#152238' : '#fff',
-                            color: darkMode ? '#e2e8f0' : '#111827',
-                            resize: 'vertical'
-                          }}
-                        />
-                        <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-                          <button
-                            onClick={handleUpdatePost}
-                            disabled={postActionLoading}
-                            style={{
-                              padding: '10px 18px',
-                              borderRadius: 8,
-                              border: 'none',
-                              background: postActionLoading ? '#6b7280' : '#006CFC',
-                              color: '#fff',
-                              cursor: postActionLoading ? 'not-allowed' : 'pointer',
-                              opacity: postActionLoading ? 0.8 : 1
-                            }}
-                          >
-                            {postActionLoading ? 'Saving...' : 'Save Changes'}
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            disabled={postActionLoading}
-                            style={{
-                              padding: '10px 18px',
-                              borderRadius: 8,
-                              border: '1px solid ' + (darkMode ? '#334155' : '#cbd5f5'),
-                              background: darkMode ? '#0b1629' : '#fff',
-                              color: darkMode ? '#dbeafe' : '#1f2937',
-                              cursor: postActionLoading ? 'not-allowed' : 'pointer'
-                            }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                <div style={{ flex: 1, overflowY: 'auto', padding: 12, borderRadius: 10, background: darkMode ? '#071226' : '#fff', marginBottom: 12 }}>
-                  <div style={{ marginBottom: 20 }}>
-                    <h3>{selectedPost.caption}</h3>
-                    <p style={{ marginBottom: 16 }}>{selectedPost.content}</p>
-                    {selectedPost.mediaUrl && (
-                      <img
-                        src={selectedPost.mediaUrl}
-                        alt="Post"
-                        style={{
-                          maxWidth: '100%',
-                          maxHeight: 300,
-                          borderRadius: 12,
-                          objectFit: 'cover',
-                          border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
-                        }}
-                      />
-                    )}
-                    <div style={{ marginTop: 12, fontSize: 12, color: darkMode ? '#94a3b8' : '#64748b' }}>
-                      Posted on: {new Date(selectedPost.timestamp).toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : activeTab === "mentions" && selectedMessage ? (
-              <>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                    {selectedMessage.avatar ? (
-                      <img
-                        src={selectedMessage.avatar}
-                        alt={selectedMessage.username}
-                        style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover" }}
-                      />
-                    ) : (
-                      <div style={{ width: 44, height: 44, borderRadius: 8, background: "#c7d9ff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
-                        {selectedMessage.username ? selectedMessage.username.charAt(0).toUpperCase() : "U"}
-                      </div>
-                    )}
-                    <div>
-                      <div style={{ fontWeight: 700 }}>{selectedMessage.username}</div>
-                      <div style={{ fontSize: 13, color: darkMode ? "#9aa7c7" : "#6b7280" }}>
-                        {selectedMessage.platform || "Social Media"}
-                      </div>
-
-                      {/* ✅ View Profile Button */}
-                      <a href={selectedMessage.profileUrl} target="_blank" rel="noopener noreferrer">
-                        <button
-                          style={{
-                            marginTop: 6,
-                            padding: "4px 10px",
-                            fontSize: 12,
-                            borderRadius: 6,
-                            border: "1px solid rgba(0,0,0,0.1)",
-                            background: "#006CFC",
-                            color: "#fff",
-                            cursor: "pointer"
-                          }}
-                        >
-                          View Profile
-                        </button>
-                      </a>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ flex: 1, overflowY: "auto", padding: 12, borderRadius: 10, background: darkMode ? "#071226" : "#fff", marginBottom: 12 }}>
-                  {/* Original message from user (left side) */}
-                  <div style={{ marginBottom: 20 }}>
-                    <div style={{ display: "flex", justifyContent: "flex-start" }}>
-                      <div style={{
-                        maxWidth: "70%",
-                        padding: "12px 16px",
-                        borderRadius: "18px 18px 18px 4px",
-                        background: darkMode ? "#1e293b" : "#f1f5f9",
-                        color: darkMode ? "#e2e8f0" : "#334155"
-                      }}>
-                        <div style={{ marginBottom: 8, fontSize: 15 }}>{selectedMessage.message}</div>
-                        {selectedMessage.mediaUrl && (
-                          <div style={{ margin: "10px 0", textAlign: "center" }}>
-                            <img
-                              src={selectedMessage.mediaUrl}
-                              alt="mention"
-                              style={{
-                                maxWidth: "100%",
-                                maxHeight: 200,
-                                borderRadius: 12,
-                                objectFit: "cover",
-                                border: `1px solid ${darkMode ? "#334155" : "#e2e8f0"}`
-                              }}
-                            />
-                          </div>
-                        )}
-                        <div style={{ marginTop: 12, fontSize: 12, color: darkMode ? "#94a3b8" : "#64748b", textAlign: "right" }}>
-                          {selectedMessage.time
-                            ? new Date(selectedMessage.time).toLocaleString()
-                            : "Unknown time"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Replies list (right side for user replies) */}
-                  {(selectedMessage.replies || []).length > 0 && (
-                    <div style={{ marginTop: 16 }}>
-                      <div style={{ fontWeight: 700, marginBottom: 8, paddingLeft: 8 }}>Replies</div>
-                      {(selectedMessage.replies || []).map((r) => (
-                        <div key={r.id} style={{ marginBottom: 12, display: "flex", justifyContent: "flex-end", gap: 8, alignItems: "flex-start" }}>
-                          {/* Avatar Circle */}
-                          <div style={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: "50%",
-                            background: "#006CFC",
-                            color: "#fff",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 12,
-                            fontWeight: 700
-                          }}>
-                            {r.author ? r.author.charAt(0).toUpperCase() : "Y"}
-                          </div>
-
-                          {/* Reply Bubble */}
-                          <div style={{
-                            maxWidth: "70%",
-                            padding: "12px 16px",
-                            borderRadius: "18px 18px 4px 18px",
-                            background: "#006CFC",
-                            color: "#fff"
-                          }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{r.author}</div>
-                            <div style={{ fontSize: 14 }}>{r.text}</div>
-                            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", textAlign: "right", marginTop: 6 }}>
-                              {r.time ? new Date(r.time).toLocaleString() : "Unknown time"}
+                            <div>
+                              <div style={{ fontWeight: 700 }}>{selectedPost.authorName || "Your Post"}</div>
+                              <div style={{ fontSize: 13, color: darkMode ? "#9aa7c7" : "#6b7280", display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {selectedPlatform === 'instagram' ? (
+                                  <>
+                                    <img src={instagramIcon} alt="Instagram" style={{ width: 20, height: 20 }} />
+                                    <span>Instagram</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <img src={facebookIcon} alt="Facebook" style={{ width: 20, height: 20 }} />
+                                    <span>Facebook</span>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
+                        </div>
+        
+                        {/* Show edit/delete buttons only for Facebook posts */}
+                        {selectedPlatform === 'facebook' && (
+                          <>
+                            <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+                              <button
+                                onClick={() => handleStartEditPost(selectedPost)}
+                                disabled={postActionLoading}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 8,
+                                  padding: '10px 16px',
+                                  borderRadius: 8,
+                                  border: '1px solid ' + (darkMode ? '#334155' : '#cbd5f5'),
+                                  background: darkMode ? (editingPost?.id === selectedPost.id ? '#1e293b' : '#0b1629') : (editingPost?.id === selectedPost.id ? '#e8f1ff' : '#fff'),
+                                  color: darkMode ? '#dbeafe' : '#1f2937',
+                                  cursor: postActionLoading ? 'not-allowed' : 'pointer'
+                                }}
+                              >
+                                <Edit style={{ width: 16, height: 16 }} />
+                                {editingPost?.id === selectedPost.id ? 'Editing...' : 'Edit Post'}
+                              </button>
+        
+                              <button
+                                onClick={() => handleDeletePost(selectedPost.id)}
+                                disabled={postActionLoading}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 8,
+                                  padding: '10px 16px',
+                                  borderRadius: 8,
+                                  border: 'none',
+                                  background: '#dc2626',
+                                  color: '#fff',
+                                  cursor: postActionLoading ? 'not-allowed' : 'pointer',
+                                  opacity: postActionLoading ? 0.7 : 1
+                                }}
+                              >
+                                <Trash2 style={{ width: 16, height: 16 }} />
+                                Delete Post
+                              </button>
+                            </div>
+        
+                            {editingPost && editingPost.id === selectedPost.id && (
+                              <div
+                                style={{
+                                  padding: 16,
+                                  borderRadius: 10,
+                                  border: '1px solid ' + (darkMode ? '#1e293b' : '#dbeafe'),
+                                  background: darkMode ? '#0f172a' : '#f8fafc',
+                                  marginBottom: 16
+                                }}
+                              >
+                                <h4 style={{ marginTop: 0, marginBottom: 12 }}>Edit Post Content</h4>
+                                <textarea
+                                  value={editContent}
+                                  onChange={(e) => setEditContent(e.target.value)}
+                                  rows={5}
+                                  style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    borderRadius: 8,
+                                    border: '1px solid ' + (darkMode ? '#334155' : '#cbd5f5'),
+                                    background: darkMode ? '#152238' : '#fff',
+                                    color: darkMode ? '#e2e8f0' : '#111827',
+                                    resize: 'vertical'
+                                  }}
+                                />
+                                <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
+                                  <button
+                                    onClick={handleUpdatePost}
+                                    disabled={postActionLoading}
+                                    style={{
+                                      padding: '10px 18px',
+                                      borderRadius: 8,
+                                      border: 'none',
+                                      background: postActionLoading ? '#6b7280' : '#006CFC',
+                                      color: '#fff',
+                                      cursor: postActionLoading ? 'not-allowed' : 'pointer',
+                                      opacity: postActionLoading ? 0.8 : 1
+                                    }}
+                                  >
+                                    {postActionLoading ? 'Saving...' : 'Save Changes'}
+                                  </button>
+                                  <button
+                                    onClick={handleCancelEdit}
+                                    disabled={postActionLoading}
+                                    style={{
+                                      padding: '10px 18px',
+                                      borderRadius: 8,
+                                      border: '1px solid ' + (darkMode ? '#334155' : '#cbd5f5'),
+                                      background: darkMode ? '#0b1629' : '#fff',
+                                      color: darkMode ? '#dbeafe' : '#1f2937',
+                                      cursor: postActionLoading ? 'not-allowed' : 'pointer'
+                                    }}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+        
+                        <div style={{ flex: 1, overflowY: 'auto', padding: 12, borderRadius: 10, background: darkMode ? '#071226' : '#fff', marginBottom: 12 }}>
+                          <div style={{ marginBottom: 20 }}>
+                            <h3>{selectedPost.caption}</h3>
+                            <p style={{ marginBottom: 16 }}>{selectedPost.content}</p>
+                            {selectedPost.mediaUrl && (
+                              <img
+                                src={selectedPost.mediaUrl}
+                                alt="Post"
+                                style={{
+                                  maxWidth: '100%',
+                                  maxHeight: 300,
+                                  borderRadius: 12,
+                                  objectFit: 'cover',
+                                  border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
+                                }}
+                              />
+                            )}
+                            <div style={{ marginTop: 12, fontSize: 12, color: darkMode ? '#94a3b8' : '#64748b' }}>
+                              Posted on: {new Date(selectedPost.timestamp).toLocaleString()}
+                            </div>
+                            {/* 💬 Toggle Comments Button (Right Side) */}
+        <button
+          type="button"
+          onClick={() => handleToggleInstaComments(selectedPost)}
+          style={{
+            marginTop: 16,
+            padding: "10px 16px",
+            borderRadius: 8,
+            border: "none",
+            background: darkMode ? "#374151" : "#f3f4f6",
+            color: darkMode ? "#e5e7eb" : "#111827",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            fontSize: 14,
+            fontWeight: 500,
+            width: "100%",
+          }}
+        >
+          <MessageCircle width={16} height={16} />
+          {showCommentsForPost === selectedPost.id ? "Hide Comments" : "View Comments"}
+        </button>
+        
+                              
+                            {/* 🖼️ Post Image */}
+        {selectedPost.media_url && (
+          <img
+            src={selectedPost.media_url}
+            alt="Post"
+            style={{
+              width: "100%",
+              borderRadius: 20,
+              marginTop: 12,
+              maxHeight: 500,
+              objectFit: "cover",
+            }}
+          />
+        )}
+        
+        {/* 💬 Comments Section */}
+        {showCommentsForPost === selectedPost.id && (
+          <div style={{ marginTop: 20 }}>
+            <h4 style={{ fontWeight: 600, marginBottom: 10 }}>Comments</h4>
+        
+            {loadingComments ? (
+          <div style={{ color: "#6b7280", fontStyle: "italic" }}>⏳ Fetching comments...</div>
+        ) : commentsData[selectedPost.id]?.length > 0 ? (
+          commentsData[selectedPost.id].map((comment) => (
+        
+                <div key={comment.id} style={{ marginBottom: 14 }}>
+                  {/* 🟢 Parent Comment */}
+                  <div
+                    style={{
+                      background: darkMode ? "#1f2937" : "#f3f4f6",
+                      borderRadius: 10,
+                      padding: "10px 12px",
+                    }}
+                  >
+                    <div style={{ fontWeight: 600 }}>@{comment.username || "user"}</div>
+                    <div style={{ marginTop: 4 }}>{comment.text}</div>
+                  </div>
+        
+                  {/* 🧩 Nested Replies */}
+                  {comment.replies?.length > 0 && (
+                    <div style={{ marginLeft: 20, marginTop: 8 }}>
+                      {comment.replies.map((reply) => (
+                        <div
+                          key={reply.id}
+                          style={{
+                            background: darkMode ? "#111827" : "#f9fafb",
+                            borderLeft: "2px solid #9ca3af",
+                            padding: "8px 12px",
+                            borderRadius: 8,
+                            marginBottom: 6,
+                          }}
+                        >
+                          <div style={{ fontWeight: 600 }}>↳ @{reply.username || "user"}</div>
+                          <div style={{ marginTop: 4 }}>{reply.text}</div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <textarea
-                      aria-label="Reply to mention"
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleReply();
-                        }
-                      }}
-                      placeholder="Type your reply and press Enter"
-                      style={{
-                        flex: 1,
-                        padding: 12,
-                        borderRadius: 8,
-                        border: "1px solid rgba(0,0,0,0.08)",
-                        minHeight: 48,
-                        resize: "vertical",
-                        background: darkMode ? "#0b1a2b" : "#fff",
-                        color: darkMode ? "#e6eefc" : "#0b1c3a",
-                      }}
-                    />
-                    <button
-                      aria-label="Send reply"
-                      onClick={handleReply}
-                      disabled={!replyText.trim()}
-                      style={{
-                        background: "#006CFC",
-                        color: "#fff",
-                        border: "none",
-                        padding: "10px 12px",
-                        borderRadius: 8,
-                        cursor: replyText.trim() ? "pointer" : "not-allowed",
-                      }}
-                    >
-                      <Send style={{ width: 16, height: 16 }} />
-                    </button>
-                  </div>
-                  <small style={{ fontSize: 12, color: darkMode ? "#94a3b8" : "#64748b" }}>
-                    Press Enter to send, Shift+Enter for new line
-                  </small>
-                </div>
-              </>
-            ) : activeTab === "dms" && selectedDm ? (
-              <>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                    <div
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 10,
-                        backgroundColor: darkMode ? "#1e3a5f" : "#e0e7ff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        overflow: "hidden",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {selectedDm.avatar ? (
-                        <img
-                          src={selectedDm.avatar}
-                          alt={selectedDm.username}
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                            e.target.parentElement.innerHTML = `<div style="color: ${darkMode ? '#fff' : '#4f46e5'}; font-weight: 600; font-size: 20px;">${selectedDm.username?.charAt(0)?.toUpperCase() || '?'}</div>`;
-                          }}
-                        />
-                      ) : (
-                        <div style={{ color: darkMode ? "#fff" : "#4f46e5", fontWeight: 600, fontSize: 20 }}>
-                          {selectedDm.username?.charAt(0)?.toUpperCase() || "?"}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 700 }}>{selectedDm.username}</div>
-                      <div style={{ fontSize: 13, color: darkMode ? "#9aa7c7" : "#6b7280" }}>{selectedDm.fullName}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="chat-messages">
-                  {selectedDm.messages.map((msg) => (
-                    <div 
-                      key={msg.id} 
-                      className={`message ${msg.isMe ? 'outgoing' : 'incoming'}`}
-                    >
-                      <div className="message-content">
-                        {!msg.isMe && (
-                          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{msg.sender}</div>
-                        )}
-                        <p>{msg.text}</p>
-                      </div>
-                      <div className="message-time">
-                        {new Date(msg.time).toLocaleTimeString()}
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={messagesEndRef} /> {/* 👈 auto-scroll target */}
-                </div>
-
-                <div className="chat-input">
-                  <div className="input-container">
-                    <textarea
-                      value={dmText}
-                      onChange={(e) => setDmText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendDm();
-                        }
-                      }}
-                      placeholder="Type your message and press Enter"
-                      className="message-input"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSendDm}
-                      disabled={!dmText.trim()}
-                      className="send-button"
-                      style={{
-                        background: dmText.trim() ? "#006CFC" : "#9ca3af",
-                        borderRadius: "8px",
-                        cursor: dmText.trim() ? "pointer" : "not-allowed",
-                      }}
-                    >
-                      <Send style={{ width: 16, height: 16 }} />
-                    </button>
-                  </div>
-                </div>
-              </>
+              ))
             ) : (
-              <div style={{ textAlign: "center", margin: "auto", color: darkMode ? "#9aa7c7" : "#6b7280" }}>
-                {activeTab === "mentions" ? (
-                  <>
-                    <MessageSquare style={{ width: 72, height: 72, margin: "0 auto 12px" }} />
-                    <div style={{ fontSize: 18, fontWeight: 600 }}>
-                      {fbUser ? "Select a mention to view" : "Login to view mentions"}
-                    </div>
-                    <div style={{ marginTop: 8, maxWidth: 420, marginLeft: "auto", marginRight: "auto" }}>
-                      {fbUser
-                        ? "Choose a message from the left to start viewing and replying. Use the Refresh button to fetch latest mentions."
-                        : "Please login using the button in the header to view and reply to mentions."
-                      }
-                    </div>
-                  </>
-                ) : activeTab === "dms" ? (
-                  <>
-                    <Mail style={{ width: 72, height: 72, margin: "0 auto 12px" }} />
-                    <div style={{ fontSize: 18, fontWeight: 600 }}>
-                      {fbUser ? "Select a conversation to view" : "Login to view messages"}
-                    </div>
-                    <div style={{ marginTop: 8, maxWidth: 420, marginLeft: "auto", marginRight: "auto" }}>
-                      {fbUser
-                        ? "Choose a conversation from the left to start messaging."
-                        : "Please login using the button in the header to view and send messages."
-                      }
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <Image style={{ width: 72, height: 72, margin: "0 auto 12px" }} />
-                    <div style={{ fontSize: 18, fontWeight: 600 }}>Posts Overview</div>
-                    <div style={{ marginTop: 8, maxWidth: 420, marginLeft: "auto", marginRight: "auto" }}>
-                      View your Instagram posts and their performance metrics.
-                    </div>
-                  </>
-                )}
-              </div>
+              <div style={{ color: "#9ca3af", fontStyle: "italic" }}>No comments yet</div>
             )}
-          </section>
-        </div>
-      </main >
+          </div>
+        )}
+        
+        
+                          </div>
+                        </div>
+                      </>
+                    ) : activeTab === "mentions" && selectedMessage ? (
+                      <>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                            {selectedMessage.avatar ? (
+                              <img
+                                src={selectedMessage.avatar}
+                                alt={selectedMessage.username}
+                                style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover" }}
+                              />
+                            ) : (
+                              <div style={{ width: 44, height: 44, borderRadius: 8, background: "#c7d9ff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
+                                {selectedMessage.username ? selectedMessage.username.charAt(0).toUpperCase() : "U"}
+                              </div>
+                            )}
+                            <div>
+                              <div style={{ fontWeight: 700 }}>{selectedMessage.username}</div>
+                              <div style={{ fontSize: 13, color: darkMode ? "#9aa7c7" : "#6b7280" }}>
+                                {selectedMessage.platform || "Social Media"}
+                              </div>
+        
+                              {/* ✅ View Profile Button */}
+                              <a href={selectedMessage.profileUrl} target="_blank" rel="noopener noreferrer">
+                                <button
+                                  style={{
+                                    marginTop: 6,
+                                    padding: "4px 10px",
+                                    fontSize: 12,
+                                    borderRadius: 6,
+                                    border: "1px solid rgba(0,0,0,0.1)",
+                                    background: "#006CFC",
+                                    color: "#fff",
+                                    cursor: "pointer"
+                                  }}
+                                >
+                                  View Profile
+                                </button>
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+        
+                        <div style={{ flex: 1, overflowY: "auto", padding: 12, borderRadius: 10, background: darkMode ? "#071226" : "#fff", marginBottom: 12 }}>
+                          {/* Original message from user (left side) */}
+                          <div style={{ marginBottom: 20 }}>
+                            <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                              <div style={{
+                                maxWidth: "70%",
+                                padding: "12px 16px",
+                                borderRadius: "18px 18px 18px 4px",
+                                background: darkMode ? "#1e293b" : "#f1f5f9",
+                                color: darkMode ? "#e2e8f0" : "#334155"
+                              }}>
+                                <div style={{ marginBottom: 8, fontSize: 15 }}>{selectedMessage.message}</div>
+                                {selectedMessage.mediaUrl && (
+                                  <div style={{ margin: "10px 0", textAlign: "center" }}>
+                                    <img
+                                      src={selectedMessage.mediaUrl}
+                                      alt="mention"
+                                      style={{
+                                        maxWidth: "100%",
+                                        maxHeight: 200,
+                                        borderRadius: 12,
+                                        objectFit: "cover",
+                                        border: `1px solid ${darkMode ? "#334155" : "#e2e8f0"}`
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                                <div style={{ marginTop: 12, fontSize: 12, color: darkMode ? "#94a3b8" : "#64748b", textAlign: "right" }}>
+                                  {selectedMessage.time
+                                    ? new Date(selectedMessage.time).toLocaleString()
+                                    : "Unknown time"}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+        
+                          {/* Replies list (right side for user replies) */}
+                          {(selectedMessage.replies || []).length > 0 && (
+                            <div style={{ marginTop: 16 }}>
+                              <div style={{ fontWeight: 700, marginBottom: 8, paddingLeft: 8 }}>Replies</div>
+                              {(selectedMessage.replies || []).map((r) => (
+                                <div key={r.id} style={{ marginBottom: 12, display: "flex", justifyContent: "flex-end", gap: 8, alignItems: "flex-start" }}>
+                                  {/* Avatar Circle */}
+                                  <div style={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: "50%",
+                                    background: "#006CFC",
+                                    color: "#fff",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: 12,
+                                    fontWeight: 700
+                                  }}>
+                                    {r.author ? r.author.charAt(0).toUpperCase() : "Y"}
+                                  </div>
+        
+                                  {/* Reply Bubble */}
+                                  <div style={{
+                                    maxWidth: "70%",
+                                    padding: "12px 16px",
+                                    borderRadius: "18px 18px 4px 18px",
+                                    background: "#006CFC",
+                                    color: "#fff"
+                                  }}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{r.author}</div>
+                                    <div style={{ fontSize: 14 }}>{r.text}</div>
+                                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", textAlign: "right", marginTop: 6 }}>
+                                      {r.time ? new Date(r.time).toLocaleString() : "Unknown time"}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+        
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            <textarea
+                              aria-label="Reply to mention"
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleReply();
+                                }
+                              }}
+                              placeholder="Type your reply and press Enter"
+                              style={{
+                                flex: 1,
+                                padding: 12,
+                                borderRadius: 8,
+                                border: "1px solid rgba(0,0,0,0.08)",
+                                minHeight: 48,
+                                resize: "vertical",
+                                background: darkMode ? "#0b1a2b" : "#fff",
+                                color: darkMode ? "#e6eefc" : "#0b1c3a",
+                              }}
+                            />
+                            <button
+                              aria-label="Send reply"
+                              onClick={handleReply}
+                              disabled={!replyText.trim()}
+                              style={{
+                                background: "#006CFC",
+                                color: "#fff",
+                                border: "none",
+                                padding: "10px 12px",
+                                borderRadius: 8,
+                                cursor: replyText.trim() ? "pointer" : "not-allowed",
+                              }}
+                            >
+                              <Send style={{ width: 16, height: 16 }} />
+                            </button>
+                          </div>
+                          <small style={{ fontSize: 12, color: darkMode ? "#94a3b8" : "#64748b" }}>
+                            Press Enter to send, Shift+Enter for new line
+                          </small>
+                        </div>
+                      </>
+                    ) : activeTab === "dms" && selectedDm ? (
+                      <>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                            <div
+                              style={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: 10,
+                                backgroundColor: darkMode ? "#1e3a5f" : "#e0e7ff",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                overflow: "hidden",
+                                flexShrink: 0,
+                              }}
+                            >
+                              {selectedDm.avatar ? (
+                                <img
+                                  src={selectedDm.avatar}
+                                  alt={selectedDm.username}
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                  onError={(e) => {
+                                    e.target.style.display = "none";
+                                    e.target.parentElement.innerHTML = `<div style="color: ${darkMode ? '#fff' : '#4f46e5'}; font-weight: 600; font-size: 20px;">${selectedDm.username?.charAt(0)?.toUpperCase() || '?'}</div>`;
+                                  }}
+                                />
+                              ) : (
+                                <div style={{ color: darkMode ? "#fff" : "#4f46e5", fontWeight: 600, fontSize: 20 }}>
+                                  {selectedDm.username?.charAt(0)?.toUpperCase() || "?"}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 700 }}>{selectedDm.username}</div>
+                              <div style={{ fontSize: 13, color: darkMode ? "#9aa7c7" : "#6b7280" }}>{selectedDm.fullName}</div>
+                            </div>
+                          </div>
+                        </div>
+        
+                        <div className="chat-messages">
+                          {selectedDm.messages.map((msg) => (
+                            <div 
+                              key={msg.id} 
+                              className={`message ${msg.isMe ? 'outgoing' : 'incoming'}`}
+                            >
+                              <div className="message-content">
+                                {!msg.isMe && (
+                                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{msg.sender}</div>
+                                )}
+                                <p>{msg.text}</p>
+                              </div>
+                              <div className="message-time">
+                                {new Date(msg.time).toLocaleTimeString()}
+                              </div>
+                            </div>
+                          ))}
+                          <div ref={messagesEndRef} /> {/* 👈 auto-scroll target */}
+                        </div>
+        
+                        <div className="chat-input">
+                          <div className="input-container">
+                            <textarea
+                              value={dmText}
+                              onChange={(e) => setDmText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleSendDm();
+                                }
+                              }}
+                              placeholder="Type your message and press Enter"
+                              className="message-input"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleSendDm}
+                              disabled={!dmText.trim()}
+                              className="send-button"
+                              style={{
+                                background: dmText.trim() ? "#006CFC" : "#9ca3af",
+                                borderRadius: "8px",
+                                cursor: dmText.trim() ? "pointer" : "not-allowed",
+                              }}
+                            >
+                              <Send style={{ width: 16, height: 16 }} />
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ textAlign: "center", margin: "auto", color: darkMode ? "#9aa7c7" : "#6b7280" }}>
+                        {activeTab === "mentions" ? (
+                          <>
+                            <MessageSquare style={{ width: 72, height: 72, margin: "0 auto 12px" }} />
+                            <div style={{ fontSize: 18, fontWeight: 600 }}>
+                              {fbUser ? "Select a mention to view" : "Login to view mentions"}
+                            </div>
+                            <div style={{ marginTop: 8, maxWidth: 420, marginLeft: "auto", marginRight: "auto" }}>
+                              {fbUser
+                                ? "Choose a message from the left to start viewing and replying. Use the Refresh button to fetch latest mentions."
+                                : "Please login using the button in the header to view and reply to mentions."
+                              }
+                            </div>
+                          </>
+                        ) : activeTab === "dms" ? (
+                          <>
+                            <Mail style={{ width: 72, height: 72, margin: "0 auto 12px" }} />
+                            <div style={{ fontSize: 18, fontWeight: 600 }}>
+                              {fbUser ? "Select a conversation to view" : "Login to view messages"}
+                            </div>
+                            <div style={{ marginTop: 8, maxWidth: 420, marginLeft: "auto", marginRight: "auto" }}>
+                              {fbUser
+                                ? "Choose a conversation from the left to start messaging."
+                                : "Please login using the button in the header to view and send messages."
+                              }
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Image style={{ width: 72, height: 72, margin: "0 auto 12px" }} />
+                            <div style={{ fontSize: 18, fontWeight: 600 }}>Posts Overview</div>
+                            <div style={{ marginTop: 8, maxWidth: 420, marginLeft: "auto", marginRight: "auto" }}>
+                              View your Instagram posts and their performance metrics.
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </section>
+                </div>
+
+
+      </main > 
     </div >
   );
 };
