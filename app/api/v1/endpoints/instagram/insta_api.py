@@ -63,3 +63,70 @@ async def get_ig_business_account(page_id: str, page_access_token: str):
     except Exception as e:
         app_logger.info(f"Error fetching Instagram business account for page_id={page_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/instagram/post/comments/")
+async def get_instagram_post_comments(
+    media_id: str,
+    access_token: str,
+):
+    """
+    Fetch comments for an Instagram media post with nested replies.
+    """
+    try:
+        from httpx import AsyncClient
+        from app.core.config import GRAPH
+        
+        url = f"{GRAPH}/{media_id}/comments"
+        params = {
+            "access_token": access_token,
+            "fields": "id,text,username,timestamp,replies{id,text,username,timestamp}"
+        }
+        
+        async with AsyncClient() as client:
+            resp = await client.get(url, params=params)
+            data = resp.json()
+            
+            if "error" in data:
+                raise HTTPException(status_code=400, detail=data["error"]["message"])
+            
+            return {"success": True, "data": data.get("data", [])}
+    except HTTPException:
+        raise
+    except Exception as e:
+        app_logger.error(f"Error fetching Instagram post comments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/instagram/post/comment/reply")
+async def reply_to_instagram_comment(
+    comment_id: str,
+    message: str,
+    access_token: str,
+):
+    """
+    Reply to an Instagram comment.
+    """
+    try:
+        from httpx import AsyncClient
+        from app.core.config import GRAPH
+        
+        url = f"{GRAPH}/{comment_id}/replies"
+        params = {
+            "access_token": access_token,
+            "message": message
+        }
+        
+        async with AsyncClient() as client:
+            resp = await client.post(url, params=params)
+            data = resp.json()
+            
+            if "error" in data:
+                raise HTTPException(status_code=400, detail=data["error"]["message"])
+            
+            return {"success": True, "data": data}
+    except HTTPException:
+        raise
+    except Exception as e:
+        app_logger.error(f"Error replying to Instagram comment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

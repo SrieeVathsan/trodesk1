@@ -221,3 +221,65 @@ async def delete_facebook_post(
     except Exception as e:
         app_logger.info(f"Error while deleting Facebook post {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/facebook/post/comments/")
+async def get_facebook_post_comments(
+    post_id: str = Query(...),
+    access_token: str = Query(...),
+):
+    """
+    Fetch comments for a Facebook post with nested replies.
+    """
+    try:
+        url = f"{GRAPH}/{post_id}/comments"
+        params = {
+            "access_token": access_token,
+            "fields": "id,from,message,created_time,like_count,comment_count,replies{id,from,message,created_time}"
+        }
+        
+        async with AsyncClient() as client:
+            resp = await client.get(url, params=params)
+            data = resp.json()
+            
+            if "error" in data:
+                raise HTTPException(status_code=400, detail=data["error"]["message"])
+            
+            return {"success": True, "data": data.get("data", [])}
+    except HTTPException:
+        raise
+    except Exception as e:
+        app_logger.error(f"Error fetching Facebook post comments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/facebook/post/comment/reply")
+async def reply_to_facebook_comment(
+    comment_id: str = Query(...),
+    message: str = Query(...),
+    access_token: str = Query(...),
+):
+    """
+    Reply to a Facebook comment.
+    """
+    try:
+        url = f"{GRAPH}/{comment_id}/comments"
+        params = {
+            "access_token": access_token,
+            "message": message
+        }
+        
+        async with AsyncClient() as client:
+            resp = await client.post(url, params=params)
+            data = resp.json()
+            
+            if "error" in data:
+                raise HTTPException(status_code=400, detail=data["error"]["message"])
+            
+            return {"success": True, "data": data}
+    except HTTPException:
+        raise
+    except Exception as e:
+        app_logger.error(f"Error replying to Facebook comment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+

@@ -18,12 +18,66 @@ import {
   ThumbsUp,
   MessageCircle,
   X,
+  EyeOff,
+  Eye,
 } from "lucide-react";
 import axios from "axios";
 import logo from "../assets/logo.png";
 import facebookIcon from "../assets/facebook.png";
 import instagramIcon from "../assets/instagram.png";
 // import "./App.css";
+
+// ✅ Import Handler Functions - Primary imports for all operations
+import {
+  handleCreateInstagramPost,
+} from "../services/instagramHandlers";
+
+import {
+  handleCreateFacebookPost,
+  handleUpdateFacebookPost,
+  handleDeleteFacebookPost,
+} from "../services/facebookHandlers";
+
+import {
+  handleFetchFacebookComments,
+  handleReplyToFacebookComment,
+  handleFetchInstagramComments,
+  handleReplyToInstagramComment,
+  handleDeleteInstagramComment,
+  handleHideInstagramComment,
+} from "../services/commentHandlers";
+
+import {
+  handleReplyToFacebookMention,
+  handleSendFacebookDM,
+  handleReplyToInstagramMention,
+  handleSendInstagramDM,
+} from "../services/messageHandlers";
+
+import {
+  handleFetchFacebookMentions,
+  handleFetchFacebookPosts,
+  handleFetchFacebookConversations,
+  handleFetchInstagramMentions,
+  handleFetchInstagramPosts,
+  handleFetchInstagramConversations,
+  handleFetchAllFacebookData,
+  handleFetchAllInstagramData,
+} from "../services/fetchHandlers";
+
+import {
+  handleFacebookLogin,
+  handleInstagramLogin,
+  handleLogout,
+  isAuthenticated,
+  getAuthStatus,
+} from "../services/authHandlers";
+
+// ✅ Import Service Functions - Only for special cases not covered by handlers
+import {
+  fetchFacebookPages,
+  fetchFacebookUserPages,
+} from "../services/facebookService";
 
 const FB_SDK_POLL_INTERVAL = 300; // ms
 const FB_SDK_POLL_ATTEMPTS = 30;
@@ -48,6 +102,7 @@ const Dashboard = () => {
   const [selectedMentionPlatform, setSelectedMentionPlatform] = useState(null); // for Mentions: 'facebook' or 'instagram'
   const [editingPost, setEditingPost] = useState(null);
   const [editContent, setEditContent] = useState("");
+  const [toast, setToast] = useState({ show: false, message: "", type: "" }); // toast notification
   const [postActionLoading, setPostActionLoading] = useState(false);
   const [selectedPage, setSelectedPage] = useState("");
   const [selectedPhoto, setSelectedPhoto] = useState(null);
@@ -77,6 +132,7 @@ const Dashboard = () => {
 
 const [fbPageId, setFbPageId] = useState(null);
 const [fbInstagramId, setFbInstagramId] = useState(null);
+const [igUsername, setIgUsername] = useState(null); // ✅ Store Instagram username
 
 
   useEffect(() => {
@@ -185,6 +241,22 @@ const [fbInstagramId, setFbInstagramId] = useState(null);
   // Toggle theme helper
   const toggleTheme = () => setDarkMode((p) => !p);
 
+  // ✅ Load Instagram username from localStorage on mount
+  useEffect(() => {
+    const storedIgUsername = localStorage.getItem("igUsername");
+    if (storedIgUsername) {
+      setIgUsername(storedIgUsername);
+    }
+  }, []);
+
+  // Toast notification helper
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: "", type: "" });
+    }, 3000);
+  };
+
   // Add this useEffect for better error handling
   useEffect(() => {
     const requestInterceptor = axios.interceptors.request.use((config) => {
@@ -200,7 +272,7 @@ const [fbInstagramId, setFbInstagramId] = useState(null);
       (error) => {
         setLoading(false);
         if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
-          alert('❌ Backend server is not running. Please start your backend server on port 8000.');
+          showToast('Backend server is not running. Please start your backend server on port 8000.', 'error');
         }
         return Promise.reject(error);
       }
@@ -239,51 +311,17 @@ const [fbInstagramId, setFbInstagramId] = useState(null);
   // ---------------- Backend API calls ----------------
   // ---------------- Fetch Facebook Mentions ----------------
 const fetchFacebookMentions = useCallback(async () => {
-  const pageId = localStorage.getItem("fbPageId");
-  const pageAccessToken = localStorage.getItem("fbAccessToken");
-
   if (!fbUser) {
-    alert("Please login first to view Facebook mentions");
+    showToast("Please login first to view Facebook mentions", "error");
     return;
   }
-
-  if (!pageId || !pageAccessToken) {
-    console.warn("⚠️ Missing pageId or accessToken for Facebook mentions");
-    return;
-  }
-
-  console.log("🔑 Facebook Mentions Params:", {
-    access_token: pageAccessToken ? pageAccessToken.slice(0, 10) + "..." : null,
-    page_id: pageId,
-  });
 
   setLoading(true);
   try {
-    const res = await axios.get("/api/facebook/mentions", {
-      params: {
-        access_token: pageAccessToken,
-        page_id: pageId,
-      },
-    });
-
-    console.log("✅ Facebook mentions response:", res.data);
-
-    const data = res.data?.data || [];
-    const fbMentions = data.map((item, i) => ({
-      platform: "Facebook",
-      id: item.id || `fb_m_${i}`,
-      message: item.message || item.text || "",
-      time: item.created_time || item.timestamp || new Date().toISOString(),
-      username: item.from?.name || item.username || "Facebook User",
-      mediaUrl: item.full_picture || "",
-      permalink: item.permalink_url || item.permalink || "",
-      replies: item.replies || [],
-      authorImage: item.from?.picture?.data?.url || "",
-      profileUrl: item.permalink_url || item.permalink || "",
-    }));
-
-    console.log("✅ Parsed Facebook mentions:", fbMentions);
-    setMentions(fbMentions);
+    const result = await handleFetchFacebookMentions(showToast);
+    if (result.success) {
+      setMentions(result.data);
+    }
   } catch (err) {
     console.error("❌ Fetch Facebook Mentions error:", err);
     setMentions([]);
@@ -294,49 +332,17 @@ const fetchFacebookMentions = useCallback(async () => {
 
 // ---------------- Fetch Instagram Mentions ----------------
 const fetchInstagramMentions = useCallback(async () => {
-  const igUserId = localStorage.getItem("fbInstagramId");
-  const pageAccessToken = localStorage.getItem("fbAccessToken");
-
   if (!fbUser) {
-    alert("Please login first to view Instagram mentions");
+    showToast("Please login first to view Instagram mentions", "error");
     return;
   }
-
-  if (!igUserId || !pageAccessToken) {
-    console.warn("⚠️ Missing igUserId or accessToken for Instagram mentions");
-    return;
-  }
-
-  console.log("🔑 Instagram Mentions Params:", {
-    access_token: pageAccessToken ? pageAccessToken.slice(0, 10) + "..." : null,
-    ig_user_id: igUserId,
-  });
 
   setLoading(true);
   try {
-    const res = await axios.get("/api/instagram/mentions", {
-      params: {
-        access_token: pageAccessToken,
-        ig_user_id: igUserId,
-      },
-    });
-
-    console.log("✅ Instagram mentions response:", res.data);
-
-    const data = res.data?.data || [];
-    const igMentions = data.map((item, i) => ({
-      platform: "Instagram",
-      id: item.id || `ig_m_${i}`,
-      message: item.caption || "",
-      time: item.timestamp || new Date().toISOString(),
-      username: item.username || "Instagram User",
-      mediaUrl: item.media_url || "",
-      permalink: item.permalink || "",
-      replies: [],
-    }));
-
-    console.log("✅ Parsed Instagram mentions:", igMentions);
-    setMentions(igMentions);
+    const result = await handleFetchInstagramMentions(showToast);
+    if (result.success) {
+      setMentions(result.data);
+    }
   } catch (err) {
     console.error("❌ Fetch Instagram Mentions error:", err);
     setMentions([]);
@@ -347,69 +353,19 @@ const fetchInstagramMentions = useCallback(async () => {
 
   // ---------------- Fetch DMs ----------------
   const fetchDms = useCallback(async () => {
-    const pageId = selectedPage?.id || localStorage.getItem("fbPageId");
-    const pageAccessToken = selectedPage?.access_token || localStorage.getItem("fbAccessToken");
-
-    console.log("🔍 Fetching DMs with:", {
-      pageId: pageId,
-      hasAccessToken: !!pageAccessToken,
-      fbUser: !!fbUser
-    });
-
-    if (!fbUser) return alert("Please login first");
-    if (!pageId || !pageAccessToken) {
-      console.warn("⚠️ Missing Page ID or Access Token for DMs");
-      alert("Missing Page ID or Page Access Token. Please login again.");
+    if (!fbUser) {
+      showToast("Please login first", "error");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await axios.get("/api/facebook/conversations", {
-        params: { page_id: pageId, access_token: pageAccessToken },
-      });
-
-      console.log("✅ DMs response:", res.data);
-
-      const conversations = res.data?.conversations || [];
-      const dmsFormatted = conversations.map((item) => {
-        const participants = item.participants?.data || [];
-        const firstUser = participants.find((p) => p.id !== pageId) || {};
-        const lastMsg = (item.messages?.data || [])[0] || {};
-
-        const formattedMessages = (item.messages?.data || [])
-          .map((m) => ({
-            id: m.id,
-            text: m.message || "",
-            time: m.created_time,
-            sender: m.from?.name || "Unknown",
-            isMe: m.from?.id === pageId,
-          }))
-          .reverse(); // ✅ Reverse to show oldest first, newest last
-
-        // ✅ Generate proper avatar URL with access token for authentication
-        let avatarUrl = null;
-        if (firstUser.id) {
-          avatarUrl = `https://graph.facebook.com/${firstUser.id}/picture?type=large&access_token=${pageAccessToken}`;
-        }
-
-        return {
-          id: item.id,
-          username: firstUser.name || "Unknown User",
-          userId: firstUser.id || null,
-          avatar: avatarUrl,
-          lastMessage: lastMsg.message || "",
-          time: lastMsg.created_time || item.updated_time,
-          unread: 0,
-          messages: formattedMessages,
-        };
-      });
-
-      console.log("✅ Formatted DMs:", dmsFormatted);
-      setDms(dmsFormatted);
+      const result = await handleFetchFacebookConversations(showToast);
+      if (result.success) {
+        setDms(result.data);
+      }
     } catch (err) {
-      console.error("❌ Fetch DMs error:", err.response?.data || err.message);
-      alert(`❌ Failed to fetch DMs: ${err.response?.data?.detail || err.message}`);
+      console.error("❌ Fetch DMs error:", err);
       setDms([]);
     } finally {
       setLoading(false);
@@ -491,65 +447,17 @@ const fetchInstagramMentions = useCallback(async () => {
 
   // ---------------- Fetch Posts ----------------
   const fetchPosts = useCallback(async () => {
-    const pageId = localStorage.getItem("fbPageId");
-    const pageAccessToken = localStorage.getItem("fbAccessToken");
-
     if (!fbUser) {
-      alert("Please login first to view posts");
-      return;
-    }
-
-    if (!pageId || !pageAccessToken) {
-      console.warn("⚠️ Missing Page ID or Access Token");
+      showToast("Please login first to view posts", "error");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await axios.get("/api/facebook/posts", {
-        params: {
-          page_id: pageId,
-          access_token: pageAccessToken,
-        },
-      });
-
-      console.log("✅ Posts fetched:", res.data);
-      console.log("📥 Raw posts response structure:", JSON.stringify(res.data, null, 2));
-
-      const data = res.data?.posts || res.data?.data || [];
-      console.log("📊 Posts data array:", data);
-
-      const postsFormatted = data.map((item, i) => {
-        console.log(`📝 Post ${i} raw item:`, JSON.stringify(item, null, 2));
-        
-        // ✅ This is from tagged posts, so there's no post image (full_picture)
-        // Only profile picture from 'from.picture.data.url'
-        // Post images would need a different API endpoint like /{post-id}?fields=attachments
-        
-        // ✅ Get author info from the 'from' field
-        const authorName = item.from?.name || "Unknown Author";
-        const authorImage = item.from?.picture?.data?.url || "";
-        const authorId = item.from?.id || "";
-
-        console.log(`👤 Post ${i} author:`, authorName);
-        console.log(`📸 Post ${i} author image:`, authorImage);
-
-        return {
-          id: item.id || `post_${i}`,
-          caption: item.message?.split("\n")[0] || "",
-          content: item.message || "",
-          page: authorName, // ✅ Use author name
-          timestamp: item.created_time || new Date().toISOString(),
-          mediaUrl:item.full_picture || "", // ✅ Tagged posts don't include post images by default
-          permalink: item.permalink_url || "#",
-          // ✅ Add author information
-          authorName: authorName,
-          authorImage: authorImage,
-          authorId: authorId,
-        };
-      });
-
-      setPosts(postsFormatted);
+      const result = await handleFetchFacebookPosts(showToast);
+      if (result.success) {
+        setPosts(result.data);
+      }
     } catch (err) {
       console.error("❌ Fetch Posts error:", err);
       setPosts([]);
@@ -558,51 +466,19 @@ const fetchInstagramMentions = useCallback(async () => {
     }
   }, [fbUser]);
 
-  // ✅ Fetch posts when platform is selected - REMOVED auto-fetch
-  // Only fetch when user selects Facebook platform in Posts tab
-  // useEffect(() => {
-  //   if (activeTab === "posts" && fbUser) {
-  //     fetchPosts();
-  //   }
-  // }, [activeTab, fbUser, fetchPosts]);
-
   // ---------------- Fetch Instagram Posts ----------------
   const fetchIgPosts = useCallback(async () => {
-    const igUserId = localStorage.getItem("fbInstagramId");
-    const accessToken = localStorage.getItem("fbAccessToken");
-
     if (!fbUser) {
-      alert("Please login first to view Instagram posts");
-      return;
-    }
-
-    if (!igUserId || !accessToken) {
-      console.warn("⚠️ Missing Instagram User ID or Access Token");
+      showToast("Please login first to view Instagram posts", "error");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await axios.get("/api/instagram/posts", {
-        params: {
-          ig_user_id: igUserId,
-          access_token: accessToken,
-        },
-      });
-
-      console.log("✅ Instagram posts fetched:", res.data);
-
-      const data = res.data?.data || [];
-      const postsFormatted = data.map((item, i) => ({
-        id: item.id || `ig_post_${i}`,
-        caption: item.caption || "",
-        mediaType: item.media_type || "IMAGE",
-        mediaUrl: item.media_url || "",
-        timestamp: item.timestamp || new Date().toISOString(),
-        permalink: item.permalink || "#",
-      }));
-
-      setIgPosts(postsFormatted);
+      const result = await handleFetchInstagramPosts(showToast);
+      if (result.success) {
+        setIgPosts(result.data);
+      }
     } catch (err) {
       console.error("❌ Fetch Instagram Posts error:", err);
       setIgPosts([]);
@@ -639,15 +515,8 @@ const fetchInstagramMentions = useCallback(async () => {
     console.log("🔄 Fetching pages with accessToken:", fbUser.accessToken.slice(0, 10) + "...");
 
     try {
-      // ✅ Use backend endpoint instead of direct Facebook API call
-      const res = await axios.get("/api/me/accounts", {
-        params: { access_token: fbUser.accessToken },
-      });
-
-      console.log("📥 Raw pages response:", res.data);
-
-      const pagesData = res.data?.pages || [];
-      console.log("📄 Pages data:", pagesData);
+      // ✅ Use service function
+      const pagesData = await fetchFacebookPages(fbUser.accessToken);
       setPages(pagesData);
 
       if (pagesData.length > 0) {
@@ -680,22 +549,16 @@ useEffect(() => {
     }
 
     try {
-      // ✅ CORRECT: Call your own backend endpoint, passing only the user's ID.
-      const res = await axios.get(
-        `http://localhost:8000http://localhost:8000/user-pages?userId=${fbUser.id}`
-      );
-
-      const pagesData = res.data?.pages || [];
+      // ✅ Use service function
+      const pagesData = await fetchFacebookUserPages(fbUser.id);
       setPages(pagesData);
       console.log("✅ User Pages fetched securely:", pagesData);
 
-      // ✅ CORRECT: Store only non-sensitive data in localStorage.
+      // ✅ Store only non-sensitive data in localStorage.
       if (pagesData.length > 0) {
-        // --- FIX: Get the first element of the array ---
         const firstPage = pagesData[0];
         localStorage.setItem("fbPageId", firstPage.id);
         localStorage.setItem("fbPageName", firstPage.name);
-        // Set the selected page state
         setSelectedPage(firstPage); 
       }
     } catch (err) {
@@ -790,109 +653,57 @@ useEffect(() => {
 // ]);
 
 
-  // ---------------- Reply to mention ----------------
+  // ---------------- Send Reply to Mention/Post ----------------
   const handleReply = async () => {
     if (!selectedMessage || !replyText.trim()) return;
 
-    const accessToken = localStorage.getItem("fbAccessToken");
-    
-    if (!accessToken) {
-      alert("⚠️ Access token not found. Please login again.");
-      return;
-    }
-
-    // ✅ SMOOTH Reply: Optimistic UI update - Add reply immediately
+    // ✅ Optimistic UI update - Add reply immediately
     const newReply = {
       id: `r_${Date.now()}`,
       text: replyText.trim(),
       time: new Date().toISOString(),
       author: "You",
       isMe: true,
-      sending: true, // ✅ Mark as sending for visual feedback
+      sending: true,
     };
 
     const replyMessage = replyText.trim();
     setReplyText(""); // Clear input immediately
 
-    // ✅ SMOOTH Update: Update both mentions list AND currently selected mention instantly
+    // Update UI optimistically
     setMentions((prev) =>
       prev.map((m) =>
         m.id === selectedMessage.id
-          ? {
-              ...m,
-              replies: [...(m.replies || []), newReply],
-            }
+          ? { ...m, replies: [...(m.replies || []), newReply] }
           : m
       )
     );
 
     setSelectedMessage((prev) =>
-      prev
-        ? {
-            ...prev,
-            replies: [...(prev.replies || []), newReply],
-          }
-        : prev
+      prev ? { ...prev, replies: [...(prev.replies || []), newReply] } : prev
     );
 
     try {
-      let response;
+      let result;
       
-      // ✅ Check platform and call appropriate backend API
+      // ✅ Use appropriate handler based on platform
       if (selectedMessage.platform === "Instagram") {
-        console.log("🔍 Sending Instagram reply with:", {
-          media_id: selectedMessage.id,
-          comment_text: replyMessage,
-          access_token: accessToken ? accessToken.slice(0, 10) + "..." : null,
-        });
-
-        response = await axios.post(
-          "/api/instagram/reply-to-mentions",
-          null,
-          {
-            params: {
-              media_id: selectedMessage.id,
-              comment_text: replyMessage,
-              access_token: accessToken,
-            },
-          }
-        );
-
-        console.log("✅ Instagram reply sent:", response.data);
+        result = await handleReplyToInstagramMention(selectedMessage.id, replyMessage, showToast);
       } else if (selectedMessage.platform === "Facebook") {
-        console.log("🔍 Sending Facebook reply with:", {
-          post_id: selectedMessage.id,
-          message: replyMessage,
-          access_token: accessToken ? accessToken.slice(0, 10) + "..." : null,
-        });
-
-        response = await axios.post(
-          "/api/facebook/sent_private",
-          null,
-          {
-            params: {
-              post_id: selectedMessage.id,
-              message: replyMessage,
-              access_token: accessToken,
-            },
-          }
-        );
-
-        console.log("✅ Facebook reply sent:", response.data);
-      } else if (selectedMessage.platform === "X") {
-        alert("⚠️ X/Twitter reply feature coming soon!");
+        result = await handleReplyToFacebookMention(selectedMessage.id, replyMessage, showToast);
+      } else {
+        showToast("X/Twitter reply feature coming soon!", "info");
         throw new Error("X platform not implemented yet");
       }
 
-      // ✅ SUCCESS: Remove sending state and confirm reply
-      if (response?.data.success) {
+      if (result.success) {
+        // Confirm reply with server data
         const confirmedReply = {
           ...newReply,
           sending: false,
-          id: response.data.response?.id || response.data.data?.id || newReply.id,
+          id: result.data?.id || newReply.id,
         };
 
-        // Update with confirmed reply
         setMentions((prev) =>
           prev.map((m) =>
             m.id === selectedMessage.id
@@ -912,38 +723,28 @@ useEffect(() => {
               }
             : prev
         );
-
-        console.log("✅ Reply confirmed and UI updated smoothly");
       } else {
-        throw new Error(response?.data?.error || "Reply failed");
+        throw new Error(result?.error || "Reply failed");
       }
     } catch (err) {
       console.error("❌ Error sending reply:", err);
       
-      // ❌ FAILED: Smoothly revert UI changes
+      // Revert UI changes on failure
       setMentions((prev) =>
         prev.map((m) =>
           m.id === selectedMessage.id
-            ? {
-                ...m,
-                replies: m.replies.filter(r => r.id !== newReply.id),
-              }
+            ? { ...m, replies: m.replies.filter(r => r.id !== newReply.id) }
             : m
         )
       );
 
       setSelectedMessage((prev) =>
         prev
-          ? {
-              ...prev,
-              replies: prev.replies.filter(r => r.id !== newReply.id),
-            }
+          ? { ...prev, replies: prev.replies.filter(r => r.id !== newReply.id) }
           : prev
       );
 
       setReplyText(replyMessage); // Restore the reply text
-      const errorMsg = err.response?.data?.detail || err.message || "Failed to send reply";
-      alert(`❌ Error: ${errorMsg}`);
     }
   };
 
@@ -951,23 +752,15 @@ useEffect(() => {
   const handleSendDm = async () => {
     if (!selectedDm || !dmText.trim()) return;
 
-    const pageId = selectedPage?.id || localStorage.getItem("fbPageId");
-    const pageAccessToken = selectedPage?.access_token || localStorage.getItem("fbPageAccessToken");
     const recipientId = selectedDm.userId;
-
-    if (!pageId || !pageAccessToken) {
-      alert("⚠️ Missing Page ID or Access Token. Please login again.");
-      return;
-    }
-
     if (!recipientId) {
-      alert("⚠️ Recipient ID not found. Cannot send message.");
+      showToast("Recipient ID not found. Cannot send message.", "error");
       return;
     }
 
     setLoading(true);
 
-    // ✅ Optimistic UI update - Add message immediately
+    // ✅ Optimistic UI update
     const newMessage = {
       id: `dm_msg_${Date.now()}`,
       text: dmText.trim(),
@@ -980,7 +773,7 @@ useEffect(() => {
     const currentTime = new Date().toISOString();
     setDmText(""); // Clear input immediately
 
-    // ✅ SMOOTH Update: Update both right panel AND left side list without visible reload
+    // Update UI optimistically
     setDms((prev) => {
       const updatedDms = prev.map((dm) =>
         dm.id === selectedDm.id
@@ -993,7 +786,7 @@ useEffect(() => {
           : dm
       );
       
-      // ✅ Move updated conversation to top of list smoothly
+      // Move updated conversation to top
       const targetDm = updatedDms.find(dm => dm.id === selectedDm.id);
       const otherDms = updatedDms.filter(dm => dm.id !== selectedDm.id);
       return [targetDm, ...otherDms];
@@ -1010,7 +803,7 @@ useEffect(() => {
         : prev
     );
 
-    // Scroll to bottom immediately
+    // Scroll to bottom
     setTimeout(() => {
       if (messagesEndRef.current) {
         messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -1018,104 +811,94 @@ useEffect(() => {
     }, 50);
 
     try {
-      // ✅ Call backend API to send Facebook message
-      const response = await axios.post(
-        "/api/facebook/message/send",
-        null,
-        {
-          params: {
-            page_id: pageId,
-            recipient_id: recipientId,
-            message_text: messageText,
-            access_token: pageAccessToken,
-          },
-        }
-      );
+      const result = await handleSendFacebookDM(recipientId, messageText, showToast);
 
-      console.log("✅ Facebook DM sent:", response.data);
-
-      if (response.data.success) {
-        // ✅ Update the message ID with the real one from backend
-        const realMessageId = response.data.response?.message_id;
-        if (realMessageId) {
-          setSelectedDm((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  messages: prev.messages.map((msg) =>
-                    msg.id === newMessage.id ? { ...msg, id: realMessageId } : msg
-                  ),
-                }
-              : prev
-          );
-        }
-        console.log("✅ Message confirmed by backend");
-      } else {
-        // ❌ Failed to send message - smoothly revert UI changes
-        setDms((prev) => {
-          const revertedDms = prev.map((dm) =>
-            dm.id === selectedDm.id
-              ? {
-                  ...dm,
-                  messages: dm.messages.filter((msg) => msg.id !== newMessage.id),
-                  lastMessage: dm.messages.length > 1 ? dm.messages[dm.messages.length - 2].text : "",
-                  time: dm.messages.length > 1 ? dm.messages[dm.messages.length - 2].time : dm.time,
-                }
-              : dm
-          );
-          
-          // ✅ Re-sort by time without the failed message
-          return revertedDms.sort((a, b) => new Date(b.time) - new Date(a.time));
-        });
-
+      if (result.success && result.data?.message_id) {
+        // Update with real message ID
         setSelectedDm((prev) =>
           prev
             ? {
                 ...prev,
-                messages: prev.messages.filter((msg) => msg.id !== newMessage.id),
+                messages: prev.messages.map((msg) =>
+                  msg.id === newMessage.id ? { ...msg, id: result.data.message_id } : msg
+                ),
               }
             : prev
         );
 
-        setDmText(messageText); // Restore the message text
-        const errorMsg = response.data.error?.message || response.data.error || "Failed to send message";
-        alert(`❌ Error: ${errorMsg}`);
+        setDms((prev) =>
+          prev.map((dm) =>
+            dm.id === selectedDm.id
+              ? {
+                  ...dm,
+                  messages: dm.messages.map((msg) =>
+                    msg.id === newMessage.id ? { ...msg, id: result.data.message_id } : msg
+                  ),
+                }
+              : dm
+          )
+        );
+      } else if (!result.success) {
+        throw new Error(result.error || "Failed to send message");
       }
     } catch (err) {
-      console.error("❌ Error sending DM:", err);
+      console.error("❌ Send DM error:", err);
       
-      // ❌ Failed to send message - smoothly revert UI changes
-      setDms((prev) => {
-        const revertedDms = prev.map((dm) =>
+      // Revert UI changes
+      setDms((prev) =>
+        prev.map((dm) =>
           dm.id === selectedDm.id
-            ? {
-                ...dm,
-                messages: dm.messages.filter((msg) => msg.id !== newMessage.id),
-                lastMessage: dm.messages.length > 1 ? dm.messages[dm.messages.length - 2].text : "",
-                time: dm.messages.length > 1 ? dm.messages[dm.messages.length - 2].time : dm.time,
-              }
+            ? { ...dm, messages: dm.messages.filter((msg) => msg.id !== newMessage.id) }
             : dm
-        );
-        
-        // ✅ Re-sort by time without the failed message
-        return revertedDms.sort((a, b) => new Date(b.time) - new Date(a.time));
-      });
+        )
+      );
 
       setSelectedDm((prev) =>
         prev
-          ? {
-              ...prev,
-              messages: prev.messages.filter((msg) => msg.id !== newMessage.id),
-            }
+          ? { ...prev, messages: prev.messages.filter((msg) => msg.id !== newMessage.id) }
           : prev
       );
 
-      setDmText(messageText); // Restore the message text
-      const errorMsg = err.response?.data?.detail || err.response?.data?.error || err.message || "Failed to send message";
-      alert(`❌ Error: ${errorMsg}`);
+      setDmText(messageText); // Restore text
     } finally {
       setLoading(false);
     }
+  };
+
+  // ---------------- Send Instagram DM (Dummy/Optimistic UI) ----------------
+  const handleSendInstagramDm = async () => {
+    if (!selectedDm || !dmText.trim()) return;
+
+    // ✅ Optimistic UI update - Add message immediately
+    const newMessage = {
+      id: `ig_dm_msg_${Date.now()}`,
+      text: dmText.trim(),
+      time: new Date().toISOString(),
+      sender: "You",
+      isMe: true,
+    };
+
+    const messageText = dmText.trim();
+    setDmText(""); // Clear input immediately
+
+    // ✅ Update the conversation with the new message
+    setSelectedDm((prev) =>
+      prev
+        ? {
+            ...prev,
+            messages: [...prev.messages, newMessage],
+          }
+        : prev
+    );
+
+    // Scroll to bottom immediately
+    setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 50);
+
+    showToast("Message sent", "success");
   };
 
   const handleDmClick = async (dm) => {
@@ -1160,7 +943,7 @@ const handleMakePost = async () => {
   setSaving(true);
 
   if (!postContent.trim()) {
-    alert("Please enter some text for your post");
+    showToast("Please enter some text for your post", "error");
     setSaving(false);
     return;
   }
@@ -1172,7 +955,7 @@ const handleMakePost = async () => {
   console.log("🔑 Access Token:", pageAccessToken ? pageAccessToken.slice(0, 10) + "..." : null);
 
   if (!pageAccessToken || !pageId) {
-    alert("⚠️ Missing Facebook credentials. Please log in again.");
+    showToast("Missing Facebook credentials. Please log in again.", "error");
     setSaving(false);
     return;
   }
@@ -1206,7 +989,7 @@ const handleMakePost = async () => {
 
     // ✅ Make POST request
     const res = await axios.post(
-      "/api/facebook/posts",
+      "http://localhost:8000/facebook/posts",
       formData,
       {
         headers: {
@@ -1218,7 +1001,7 @@ const handleMakePost = async () => {
     console.log("✅ Post response:", res.data);
 
     if (res.data.success || res.status === 200) {
-      alert("✅ Post created successfully!");
+      showToast("Post created successfully!", "success");
       
       // ✅ Clear form
       setPostContent("");
@@ -1229,13 +1012,14 @@ const handleMakePost = async () => {
       // ✅ Refresh posts to show the new post
       await fetchPosts();
     } else {
-      alert("⚠️ Post creation response unclear. Check console.");
+      showToast("Post creation response unclear. Check console.", "error");
     }
   } catch (err) {
     console.error("❌ Create post error:", err);
     console.error("📥 Backend error response:", err?.response?.data);
-    alert(`❌ Failed to create post: ${err?.response?.data?.detail || err.message}`);
+    showToast(`Failed to create post: ${err?.response?.data?.detail || err.message}`, "error");
   } finally {
+    setSaving(false);
     setSaving(false);
   }
 };
@@ -1257,95 +1041,77 @@ const handleCancelEdit = () => {
 
 const handleUpdatePost = async () => {
   if (!editingPost) return;
-  if (!editContent.trim()) {
-    alert("Please enter updated post content");
-    return;
-  }
-
-  const accessToken = localStorage.getItem("fbAccessToken");
-  if (!accessToken) {
-    alert("Missing Facebook credentials. Please login again.");
+  
+  if (!editContent || !editContent.trim()) {
+    showToast("Post content cannot be empty", "error");
     return;
   }
 
   try {
     setPostActionLoading(true);
-    const formData = new FormData();
-    formData.append("new_message", editContent);
-    formData.append("access_token", accessToken);
+    
+    // ✅ Use handler function
+    const result = await handleUpdateFacebookPost(
+      editingPost.id,
+      editContent,
+      showToast
+    );
 
-    await axios.put(`/api/facebook/posts/${editingPost.id}`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    if (result.success) {
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === editingPost.id
+            ? {
+                ...post,
+                content: editContent,
+                caption: editContent.split("\n")[0] || "",
+              }
+            : post
+        )
+      );
 
-    alert("✅ Post updated successfully!");
-
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === editingPost.id
+      setSelectedPost((prev) =>
+        prev && prev.id === editingPost.id
           ? {
-              ...post,
+              ...prev,
               content: editContent,
               caption: editContent.split("\n")[0] || "",
             }
-          : post
-      )
-    );
+          : prev
+      );
 
-    setSelectedPost((prev) =>
-      prev && prev.id === editingPost.id
-        ? {
-            ...prev,
-            content: editContent,
-            caption: editContent.split("\n")[0] || "",
-          }
-        : prev
-    );
-
-    handleCancelEdit();
-    await fetchPosts();
-  } catch (err) {
-    console.error("❌ Failed to update post:", err?.response?.data || err.message);
-    alert(`❌ Failed to update post: ${err?.response?.data?.detail || err.message}`);
+      handleCancelEdit();
+      await fetchPosts();
+    }
   } finally {
     setPostActionLoading(false);
   }
 };
 
 const handleDeletePost = async (postId) => {
-  const accessToken = localStorage.getItem("fbAccessToken");
-  if (!accessToken) {
-    alert("Missing Facebook credentials. Please login again.");
-    return;
-  }
-
-  const confirmDelete = window.confirm("Are you sure you want to delete this post?");
-  if (!confirmDelete) return;
-
   try {
     setPostActionLoading(true);
-    await axios.delete(`/api/facebook/posts/${postId}`, {
-      params: {
-        access_token: accessToken,
-      },
-    });
+    
+    // ✅ Use handler function with confirmation
+    const result = await handleDeleteFacebookPost(
+      postId,
+      showToast,
+      (msg) => window.confirm(msg)
+    );
 
-    alert("✅ Post deleted successfully!");
-    setPosts((prev) => prev.filter((post) => post.id !== postId));
-    if (selectedPost?.id === postId) {
-      setSelectedPost(null);
-    }
-    if (editingPost?.id === postId) {
-      handleCancelEdit();
-    }
-    await fetchPosts();
-  } catch (err) {
-    console.error("❌ Failed to delete post:", err?.response?.data || err.message);
-    // ✅ Only show alert if it's a real error (not Facebook's quirky response)
-    if (err?.response?.status !== 200) {
-      alert(`❌ Failed to delete post: ${err?.response?.data?.detail || err.message}`);
+    if (result.success) {
+      setPosts((prev) => prev.filter((post) => post.id !== postId));
+      if (selectedPost?.id === postId) {
+        setSelectedPost(null);
+      }
+      if (editingPost?.id === postId) {
+        handleCancelEdit();
+      }
+      
+      // If there's a warning (unclear response), refresh to verify
+      if (result.warning) {
+        await fetchPosts();
+      }
     }
   } finally {
     setPostActionLoading(false);
@@ -1354,30 +1120,18 @@ const handleDeletePost = async (postId) => {
 
 // ---------------- Fetch Comments for Post ----------------
 const fetchPostComments = async (postId) => {
-  const accessToken = localStorage.getItem("fbAccessToken");
-  if (!accessToken) {
-    alert("Missing Facebook credentials. Please login again.");
-    return;
-  }
-
   try {
     setLoadingComments(true);
-    const response = await axios.get(`/api/facebook/post/comments/`, {
-      params: {
-        post_id: postId,
-        access_token: accessToken,
-      },
-    });
-
-    if (response.data.success) {
+    const result = await handleFetchFacebookComments(postId, showToast);
+    
+    if (result.success) {
       setCommentsData((prev) => ({
         ...prev,
-        [postId]: response.data.data || [],
+        [postId]: result.data || [],
       }));
     }
   } catch (err) {
-    console.error("❌ Failed to fetch comments:", err?.response?.data || err.message);
-    alert(`❌ Failed to fetch comments: ${err?.response?.data?.detail || err.message}`);
+    console.error("❌ Failed to fetch comments:", err);
   } finally {
     setLoadingComments(false);
   }
@@ -1386,49 +1140,177 @@ const fetchPostComments = async (postId) => {
 // ---------------- Reply to Comment ----------------
 const handleReplyToComment = async (commentId, postId) => {
   if (!commentReplyText.trim()) {
-    alert("Please enter a reply message");
-    return;
-  }
-
-  const accessToken = localStorage.getItem("fbAccessToken");
-  if (!accessToken) {
-    alert("Missing Facebook credentials. Please login again.");
+    showToast("Please enter a reply message", "error");
     return;
   }
 
   try {
     setLoadingComments(true);
-    const response = await axios.post(`/api/facebook/post/comment/reply`, null, {
-      params: {
-        comment_id: commentId,
-        message: commentReplyText,
-        access_token: accessToken,
-      },
-    });
-
-    if (response.data.success) {
-      alert("✅ Reply posted successfully!");
+    const result = await handleReplyToFacebookComment(commentId, commentReplyText, postId, showToast);
+    
+    if (result.success) {
       setCommentReplyText("");
       setReplyingToComment(null);
       // Refresh comments
       await fetchPostComments(postId);
     }
   } catch (err) {
-    console.error("❌ Failed to reply to comment:", err?.response?.data || err.message);
-    alert(`❌ Failed to reply: ${err?.response?.data?.detail || err.message}`);
+    console.error("❌ Failed to reply to comment:", err);
+  } finally {
+    setLoadingComments(false);
+  }
+};
+
+// ---------------- Fetch Instagram Comments ----------------
+const fetchInstagramComments = async (mediaId) => {
+  try {
+    setLoadingComments(true);
+    const result = await handleFetchInstagramComments(mediaId, showToast);
+    
+    if (result.success) {
+      setCommentsData((prev) => ({
+        ...prev,
+        [mediaId]: result.data || [],
+      }));
+    }
+  } catch (err) {
+    console.error("❌ Failed to fetch Instagram comments:", err);
+  } finally {
+    setLoadingComments(false);
+  }
+};
+
+// ---------------- Reply to Instagram Comment ----------------
+const handleReplyInstagramComment = async (commentId, mediaId) => {
+  if (!commentReplyText.trim()) {
+    showToast("Please enter a reply message", "error");
+    return;
+  }
+
+  // Optimistic UI update
+  const tempReplyId = `temp_ig_reply_${Date.now()}`;
+  const newReply = {
+    id: tempReplyId,
+    text: commentReplyText,
+    username: igUsername || localStorage.getItem("igUsername") || "troudzai",
+    timestamp: new Date().toISOString(),
+  };
+
+  setCommentsData((prev) => {
+    const mediaComments = prev[mediaId] || [];
+    const updatedComments = mediaComments.map((comment) => {
+      if (comment.id === commentId) {
+        return {
+          ...comment,
+          replies: { data: [...(comment.replies?.data || []), newReply] },
+        };
+      }
+      return comment;
+    });
+    return { ...prev, [mediaId]: updatedComments };
+  });
+
+  const replyTextToSend = commentReplyText;
+  setCommentReplyText("");
+  setReplyingToComment(null);
+
+  try {
+    setLoadingComments(true);
+    const result = await handleReplyToInstagramComment(commentId, mediaId, replyTextToSend, showToast);
+
+    if (result.success) {
+      await fetchInstagramComments(mediaId); // Refresh to get real data
+    } else {
+      // Revert on failure
+      setCommentsData((prev) => {
+        const mediaComments = prev[mediaId] || [];
+        const updatedComments = mediaComments.map((comment) => {
+          if (comment.id === commentId) {
+            return {
+              ...comment,
+              replies: {
+                data: (comment.replies?.data || []).filter((r) => r.id !== tempReplyId),
+              },
+            };
+          }
+          return comment;
+        });
+        return { ...prev, [mediaId]: updatedComments };
+      });
+      setCommentReplyText(replyTextToSend);
+    }
+  } catch (err) {
+    console.error("❌ Failed to reply to Instagram comment:", err);
+    // Revert on error
+    setCommentsData((prev) => {
+      const mediaComments = prev[mediaId] || [];
+      const updatedComments = mediaComments.map((comment) => {
+        if (comment.id === commentId) {
+          return {
+            ...comment,
+            replies: {
+              data: (comment.replies?.data || []).filter((r) => r.id !== tempReplyId),
+            },
+          };
+        }
+        return comment;
+      });
+      return { ...prev, [mediaId]: updatedComments };
+    });
+    setCommentReplyText(replyTextToSend);
+  } finally {
+    setLoadingComments(false);
+  }
+};
+
+// ---------------- Delete Instagram Comment ----------------
+const handleDeleteIgComment = async (commentId, mediaId) => {
+  const confirmDelete = window.confirm("Are you sure you want to delete this comment?");
+  if (!confirmDelete) return;
+
+  try {
+    setLoadingComments(true);
+    const result = await handleDeleteInstagramComment(commentId, showToast);
+
+    if (result.success) {
+      await fetchInstagramComments(mediaId);
+    }
+  } catch (err) {
+    console.error("❌ Failed to delete Instagram comment:", err);
+  } finally {
+    setLoadingComments(false);
+  }
+};
+
+// ---------------- Hide/Unhide Instagram Comment ----------------
+const handleHideIgComment = async (commentId, mediaId, currentlyHidden = false) => {
+  try {
+    setLoadingComments(true);
+    const result = await handleHideInstagramComment(commentId, !currentlyHidden, showToast);
+
+    if (result.success) {
+      await fetchInstagramComments(mediaId);
+    }
+  } catch (err) {
+    console.error("❌ Failed to hide/unhide Instagram comment:", err);
   } finally {
     setLoadingComments(false);
   }
 };
 
 // ---------------- Toggle Comments Display ----------------
-const handleToggleComments = async (postId) => {
+const handleToggleComments = async (postId, platform = 'facebook') => {
+  console.log("🔔 toggle comments called for:", { postId, platform });
   if (showCommentsForPost === postId) {
     setShowCommentsForPost(null);
   } else {
     setShowCommentsForPost(postId);
     if (!commentsData[postId]) {
-      await fetchPostComments(postId);
+      if (platform === 'instagram') {
+        await fetchInstagramComments(postId);
+      } else {
+        await fetchPostComments(postId);
+      }
     }
   }
 };
@@ -1438,73 +1320,28 @@ const handleMakeInstagramPost = async () => {
   if (saving) return;
   setSaving(true);
 
-  if (!igImageUrl.trim()) {
-    alert("Please enter an image URL for Instagram post");
-    setSaving(false);
-    return;
-  }
-
-  const igUserId = localStorage.getItem("fbInstagramId");
-  const accessToken = localStorage.getItem("fbAccessToken");
-
-  if (!accessToken || !igUserId) {
-    alert("⚠️ Missing Instagram credentials. Please log in again.");
-    setSaving(false);
-    return;
-  }
-
   try {
-    // Parse usernames from comma-separated string
-    const usernameArray = igUsernames
-      .split(",")
-      .map(u => u.trim())
-      .filter(u => u.length > 0);
-
-    // Build query params
-    const params = {
-      access_token: accessToken,
-      ig_user_id: igUserId,
-      image_url: igImageUrl,
-    };
-
-    // Add optional caption
-    if (igCaption) {
-      params.caption = igCaption;
-    }
-
-    console.log("🚀 Instagram post params:", params);
-    console.log("🚀 Instagram usernames:", usernameArray);
-
-    // Send usernames as JSON body, other params as query params
-    const res = await axios.post(
-      "/api/instagram/create-post",
-      usernameArray.length > 0 ? usernameArray : [],
+    // ✅ Use handler function
+    const result = await handleCreateInstagramPost(
       {
-        params: params,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
+        imageUrl: igImageUrl,
+        caption: igCaption,
+        usernames: igUsernames,
+      },
+      showToast
     );
 
-    console.log("✅ Instagram post response:", res.data);
-
-    if (res.data.id || res.status === 200) {
-      alert("✅ Instagram post created successfully!");
-      
+    if (result.success) {
       // Clear form
       setIgImageUrl("");
       setIgCaption("");
       setIgUsernames("");
       setShowPostForm(false);
       setSelectedPlatform(null);
-    } else {
-      alert("⚠️ Instagram post creation response unclear. Check console.");
+      
+      // Refresh posts
+      await fetchPosts();
     }
-  } catch (err) {
-    console.error("❌ Create Instagram post error:", err);
-    console.error("📥 Backend error response:", err?.response?.data);
-    alert(`❌ Failed to create Instagram post: ${err?.response?.data?.detail || err.message}`);
   } finally {
     setSaving(false);
   }
@@ -1516,7 +1353,7 @@ const handleMakeInstagramPost = async () => {
   // ---------------- Facebook login ----------------
 const handleFBLogin = () => {
   if (!window.FB || !fbReady) {
-    alert("⚠️ Facebook SDK not ready yet, please wait a second.");
+    showToast("Facebook SDK not ready yet, please wait a second.", "error");
     return;
   }
 
@@ -1572,11 +1409,26 @@ const handleFBLogin = () => {
                 setFbPageId(page_id || null);
                 setFbInstagramId(instagram_business_id || null);
 
-                alert(`✅ Logged in successfully!\nPage ID: ${page_id}\nInstagram ID: ${instagram_business_id ?? "N/A"}`);
+                // ✅ Fetch Instagram username if we have IG business ID
+                if (instagram_business_id && access_token) {
+                  window.FB.api(
+                    `/${instagram_business_id}`,
+                    { fields: 'username', access_token: access_token },
+                    (igData) => {
+                      if (igData && igData.username) {
+                        console.log("✅ Instagram username:", igData.username);
+                        setIgUsername(igData.username);
+                        localStorage.setItem("igUsername", igData.username);
+                      }
+                    }
+                  );
+                }
+
+                showToast(`Logged in successfully! Page ID: ${page_id}, Instagram ID: ${instagram_business_id ?? "N/A"}`, "success");
               })
               .catch((err) => {
                 console.error("❌ Backend sync error:", err);
-                alert("⚠️ Backend sync failed. Check console for details.");
+                showToast("Backend sync failed. Check console for details.", "error");
               });
             }
           );
@@ -1590,7 +1442,7 @@ const handleFBLogin = () => {
     );
   } catch (err) {
     console.error("FB.login error", err);
-    alert("❌ FB login failed. Please refresh and try again.");
+    showToast("FB login failed. Please refresh and try again.", "error");
   }
 };
 
@@ -1635,6 +1487,30 @@ const handleFBLogin = () => {
   // ---------------- Render ----------------
   return (
     <div className={`app-root ${darkMode ? "dark" : "light"}`} style={{ height: "100vh", display: "flex" }}>
+      {/* Toast Notification */}
+      {toast.show && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            backgroundColor: toast.type === 'success' ? '#10b981' : toast.type === 'error' ? '#ef4444' : '#3b82f6',
+            color: 'white',
+            padding: '16px 24px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            zIndex: 9999,
+            maxWidth: '400px',
+            animation: 'slideIn 0.3s ease-out',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}
+        >
+          <span style={{ fontSize: '14px', fontWeight: '500' }}>{toast.message}</span>
+        </div>
+      )}
+      
       {/* Left Sidebar */}
       <aside className="nav-sidebar">
         <div className="nav-icon logo">
@@ -1833,10 +1709,11 @@ const handleFBLogin = () => {
                       key={m.id}
                       role="button"
                       tabIndex={0}
-                      onClick={() => setSelectedMessage(m)}
+                      onClick={() => { setSelectedMessage(m); handleToggleComments(m.target_id || m.id, (m.platform || '').toLowerCase() === 'instagram' ? 'instagram' : 'facebook'); }}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
+                          if (e.key === "Enter" || e.key === " ") {
                           setSelectedMessage(m);
+                          handleToggleComments(m.target_id || m.id, (m.platform || '').toLowerCase() === 'instagram' ? 'instagram' : 'facebook');
                         }
                       }}
                       style={{
@@ -2382,10 +2259,71 @@ const handleFBLogin = () => {
                     <div style={{ fontSize: 13, marginTop: 6 }}>Choose a page from the dropdown above</div>
                   </div>
                 ) : selectedPlatform === 'instagram' ? (
-                  <div style={{ textAlign: 'center', paddingTop: 30, color: darkMode ? '#9aa7c7' : '#6b7280' }}>
-                    <Mail style={{ width: 48, height: 48, margin: "0 auto 12px" }} />
-                    <div>Instagram DMs coming soon</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>Instagram direct messages feature will be available soon</div>
+                  // Instagram DMs - Dummy Conversation
+                  <div
+                    onClick={() => setSelectedDm({
+                      id: 'ig_dummy_1',
+                      username: 'Surya R',
+                      fullName: 'Surya R',
+                      avatar: null,
+                      userId: 'ig_user_1',
+                      platform: 'instagram',
+                      messages: [{
+                        id: 'ig_msg_1',
+                        text: 'Hii',
+                        sender: 'Surya R',
+                        time: new Date().setHours(11, 43, 0, 0),
+                        isMe: false
+                      }]
+                    })}
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      padding: 12,
+                      borderRadius: 10,
+                      cursor: "pointer",
+                      marginBottom: 10,
+                      background: selectedDm?.id === 'ig_dummy_1' ? "#006CFC" : darkMode ? "#0b1a2b" : "#eef7ff",
+                      color: selectedDm?.id === 'ig_dummy_1' ? "#fff" : darkMode ? "#e6eefc" : "#0b1c3a",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 8,
+                        backgroundColor: darkMode ? "#1e3a5f" : "#e0e7ff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        overflow: "hidden",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <div style={{ color: darkMode ? "#fff" : "#4f46e5", fontWeight: 600, fontSize: 18 }}>
+                        S
+                      </div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <strong>Surya R</strong>
+                      </div>
+                      <div
+                        style={{
+                          marginTop: 6,
+                          fontSize: 14,
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        Hii
+                      </div>
+                      <div style={{ marginTop: 4, fontSize: 12, color: darkMode ? "#94a3b8" : "#6b7280" }}>
+                        11:43
+                      </div>
+                    </div>
                   </div>
                 ) : dms.length === 0 ? (
                   <div
@@ -2647,7 +2585,7 @@ const handleFBLogin = () => {
                               >
                                 {/* Post Header */}
                                 <div 
-                                  onClick={() => setSelectedPost(post)}
+                                  onClick={() => { setSelectedPost(post); handleToggleComments(post.id, 'facebook'); }}
                                   style={{ 
                                     display: 'flex', 
                                     justifyContent: 'space-between', 
@@ -3349,6 +3287,216 @@ const handleFBLogin = () => {
                                     🎥 Video Post
                                   </div>
                                 )}
+
+                                {/* Action Buttons for Instagram */}
+                                <div style={{
+                                  display: 'flex',
+                                  gap: 8,
+                                  marginTop: 12,
+                                  paddingTop: 12,
+                                  borderTop: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb')
+                                }}>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleComments(post.id, 'instagram');
+                                    }}
+                                    style={{
+                                      flex: 1,
+                                      padding: '8px 12px',
+                                      borderRadius: 6,
+                                      background: showCommentsForPost === post.id ? (darkMode ? '#374151' : '#f3f4f6') : 'transparent',
+                                      border: 'none',
+                                      color: darkMode ? '#d1d5db' : '#374151',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: 6,
+                                      fontSize: 14,
+                                      fontWeight: 500
+                                    }}
+                                  >
+                                    <MessageCircle size={16} />
+                                    {showCommentsForPost === post.id ? 'Hide Comments' : 'View Comments'}
+                                  </button>
+                                </div>
+
+                                {/* Comments Section for Instagram */}
+                                {showCommentsForPost === post.id && (
+                                  <div style={{
+                                    marginTop: 12,
+                                    paddingTop: 12,
+                                    borderTop: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb')
+                                  }}>
+                                    {loadingComments ? (
+                                      <div style={{ textAlign: 'center', padding: 20, color: darkMode ? '#94a3b8' : '#6b7280' }}>
+                                        Loading comments...
+                                      </div>
+                                    ) : commentsData[post.id]?.length > 0 ? (
+                                      commentsData[post.id].map((comment) => (
+                                        <div
+                                          key={comment.id}
+                                          style={{
+                                            marginBottom: 12,
+                                            padding: 12,
+                                            borderRadius: 8,
+                                            background: darkMode ? '#0f172a' : '#f9fafb'
+                                          }}
+                                        >
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 8 }}>
+                                            <div style={{ flex: 1 }}>
+                                              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
+                                                {comment.username || comment.from?.name || 'User'}
+                                              </div>
+                                              <div style={{ fontSize: 14, color: darkMode ? '#d1d5db' : '#374151' }}>
+                                                {comment.text || comment.message}
+                                              </div>
+                                            </div>
+                                            <div style={{ fontSize: 11, color: darkMode ? '#94a3b8' : '#6b7280', whiteSpace: 'nowrap', marginLeft: 12 }}>
+                                              {comment.timestamp ? new Date(comment.timestamp).toLocaleDateString() : ''}
+                                            </div>
+                                          </div>
+                                          
+                                          {/* Action Buttons */}
+                                          <div style={{ display: 'flex', gap: 8 }}>
+                                            <button
+                                              onClick={() => setReplyingToComment(replyingToComment === comment.id ? null : comment.id)}
+                                              style={{
+                                                padding: '4px 8px',
+                                                fontSize: 12,
+                                                borderRadius: 4,
+                                                border: 'none',
+                                                background: replyingToComment === comment.id ? (darkMode ? '#374151' : '#e5e7eb') : 'transparent',
+                                                color: darkMode ? '#9ca3af' : '#6b7280',
+                                                cursor: 'pointer',
+                                                fontWeight: 500,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 4
+                                              }}
+                                            >
+                                              {replyingToComment === comment.id ? 'Cancel' : 'Reply'}
+                                            </button>
+                                            
+                                            <button
+                                              onClick={() => handleDeleteIgComment(comment.id, post.id)}
+                                              style={{
+                                                padding: '4px 8px',
+                                                fontSize: 12,
+                                                borderRadius: 4,
+                                                border: 'none',
+                                                background: 'transparent',
+                                                color: '#ef4444',
+                                                cursor: 'pointer',
+                                                fontWeight: 500,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 4
+                                              }}
+                                            >
+                                              <Trash2 size={14} />
+                                              Delete
+                                            </button>
+                                            
+                                            <button
+                                              onClick={() => handleHideIgComment(comment.id, post.id, comment.is_hidden)}
+                                              style={{
+                                                padding: '4px 8px',
+                                                fontSize: 12,
+                                                borderRadius: 4,
+                                                border: 'none',
+                                                background: 'transparent',
+                                                color: darkMode ? '#9ca3af' : '#6b7280',
+                                                cursor: 'pointer',
+                                                fontWeight: 500,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 4
+                                              }}
+                                            >
+                                              {comment.is_hidden ? <Eye size={14} /> : <EyeOff size={14} />}
+                                              {comment.is_hidden ? 'Unhide' : 'Hide'}
+                                            </button>
+                                          </div>
+
+                                          {/* Reply Input */}
+                                          {replyingToComment === comment.id && (
+                                            <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                                              <input
+                                                type="text"
+                                                value={commentReplyText}
+                                                onChange={(e) => setCommentReplyText(e.target.value)}
+                                                placeholder="Write a reply..."
+                                                style={{
+                                                  flex: 1,
+                                                  padding: '8px 12px',
+                                                  borderRadius: 6,
+                                                  border: '1px solid ' + (darkMode ? '#374151' : '#d1d5db'),
+                                                  background: darkMode ? '#1f2937' : '#fff',
+                                                  color: darkMode ? '#e5e7eb' : '#111827',
+                                                  fontSize: 13
+                                                }}
+                                                onKeyPress={(e) => {
+                                                  if (e.key === 'Enter' && !loadingComments) {
+                                                    handleReplyInstagramComment(comment.id, post.id);
+                                                  }
+                                                }}
+                                              />
+                                              <button
+                                                onClick={() => handleReplyInstagramComment(comment.id, post.id)}
+                                                disabled={loadingComments || !commentReplyText.trim()}
+                                                style={{
+                                                  padding: '8px 16px',
+                                                  borderRadius: 6,
+                                                  border: 'none',
+                                                  background: (!commentReplyText.trim() || loadingComments) ? '#9ca3af' : '#E4405F',
+                                                  color: '#fff',
+                                                  cursor: (!commentReplyText.trim() || loadingComments) ? 'not-allowed' : 'pointer',
+                                                  fontSize: 13,
+                                                  fontWeight: 500
+                                                }}
+                                              >
+                                                {loadingComments ? '...' : 'Send'}
+                                              </button>
+                                            </div>
+                                          )}
+
+                                          {/* Nested Replies for Instagram */}
+                                          {comment.replies && comment.replies.data && comment.replies.data.length > 0 && (
+                                            <div style={{ marginTop: 12, marginLeft: 20, paddingLeft: 12, borderLeft: '2px solid ' + (darkMode ? '#374151' : '#e5e7eb') }}>
+                                              {comment.replies.data.map((reply) => (
+                                                <div
+                                                  key={reply.id}
+                                                  style={{
+                                                    marginBottom: 8,
+                                                    padding: 8,
+                                                    borderRadius: 6,
+                                                    background: darkMode ? '#1e293b' : '#f1f5f9'
+                                                  }}
+                                                >
+                                                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>
+                                                    {reply.username || 'User'}
+                                                  </div>
+                                                  <div style={{ fontSize: 13, color: darkMode ? '#cbd5e1' : '#475569' }}>
+                                                    {reply.text}
+                                                  </div>
+                                                  <div style={{ fontSize: 10, color: darkMode ? '#94a3b8' : '#94a3b8', marginTop: 4 }}>
+                                                    {reply.timestamp ? new Date(reply.timestamp).toLocaleDateString() : ''}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <div style={{ textAlign: 'center', padding: 20, color: darkMode ? '#94a3b8' : '#6b7280' }}>
+                                        No comments yet
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -3356,72 +3504,7 @@ const handleFBLogin = () => {
                       </>
                     )}
 
-                    {/* Old Posts List - Remove this section as we moved it to Facebook platform view */}
-                    {!showPostForm && !selectedPlatform && posts.length > 0 && (
-                      <div style={{ display: 'none' }}>
-                          {posts.map((post) => (
-                            <div
-                              key={post.id}
-                              onClick={() => setSelectedPost(post)}
-                              style={{
-                                padding: 16,
-                                borderRadius: 10,
-                                marginBottom: 12,
-                                background: darkMode ? '#1f2937' : '#fff',
-                                border: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb'),
-                                cursor: "pointer"
-                              }}
-                            >
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  {/* ✅ Author avatar */}
-                                  {post.authorImage && (
-                                    <img
-                                      src={post.authorImage}
-                                      alt={post.authorName}
-                                      style={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: '50%',
-                                        objectFit: 'cover'
-                                      }}
-                                    />
-                                  )}
-                                  <div>
-                                    <strong style={{ fontSize: 16 }}>{post.caption || post.content.slice(0, 30)}</strong>
-                                    <div style={{ fontSize: 12, color: darkMode ? '#94a3b8' : '#6b7280', marginTop: 4 }}>
-                                      Posted by: {post.authorName || post.page}
-                                    </div>
-                                  </div>
-                                </div>
-                                <small style={{ color: darkMode ? '#94a3b8' : '#6b7280', fontSize: 12 }}>
-                                  {new Date(post.timestamp).toLocaleDateString()}
-                                </small>
-                              </div>
-                              <p style={{ marginBottom: 12, color: darkMode ? '#d1d5db' : '#374151' }}>
-                                {post.content.length > 150 ? post.content.slice(0, 150) + "..." : post.content}
-                              </p>
-                              {post.mediaUrl && (
-                                <img
-                                  src={post.mediaUrl}
-                                  alt="Post"
-                                  style={{
-                                    width: '100%',
-                                    maxHeight: 300,
-                                    objectFit: 'cover',
-                                    borderRadius: 8,
-                                    marginTop: 8
-                                  }}
-                                  onError={(e) => {
-                                    console.log("Image load error for:", post.mediaUrl);
-                                    e.target.style.display = 'none';
-                                  }}
-                                />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                    )}
+                    {/* Old Posts List removed to avoid duplicate legacy rendering */}
                   </>
                 )}
               </div>
@@ -3838,7 +3921,12 @@ const handleFBLogin = () => {
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
-                          handleSendDm();
+                          // Handle Instagram DM send
+                          if (selectedDm.platform === 'instagram') {
+                            handleSendInstagramDm();
+                          } else {
+                            handleSendDm();
+                          }
                         }
                       }}
                       placeholder="Type your message and press Enter"
@@ -3846,7 +3934,14 @@ const handleFBLogin = () => {
                     />
                     <button
                       type="button"
-                      onClick={handleSendDm}
+                      onClick={() => {
+                        // Handle Instagram DM send
+                        if (selectedDm.platform === 'instagram') {
+                          handleSendInstagramDm();
+                        } else {
+                          handleSendDm();
+                        }
+                      }}
                       disabled={!dmText.trim()}
                       className="send-button"
                       style={{
